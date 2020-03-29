@@ -56,7 +56,7 @@ function SensiboPodAccessory(platform, device) {
   that.state.fanLevel = 'auto'; // "auto", "high", "medium" or "low"
   that.state.hideHumidity = device.hideHumidity || false;
   that.state.refreshCycle = device.refreshCycle * 1000 || stateRefreshRate;
-  that.temp.temperature = 16; // float
+  that.temp.temperature = 20; // float
   that.temp.humidity = 0; // int
 
   that.autoMode = false;
