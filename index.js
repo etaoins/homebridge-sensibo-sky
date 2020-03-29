@@ -30,7 +30,6 @@ function SensiboPlatform(log, config) {
   this.apiDebug = config['apiDebug'];
   this.timeLapse = config['timeLapse'];
   this.hideHumidity = config['hideHumidity'] || false;
-  this.fixedState = config['fixedState'] || 'auto';
   this.temperatureUnit = config['temperatureUnit'];
   this.defaultTemp = config['defaultTemp'];
   this.api = sensibo;
@@ -74,15 +73,6 @@ SensiboPlatform.prototype = {
           device.hideHumidity = that.hideHumidity || false;
           device.temperatureUnit = that.temperatureUnit;
           device.defaultTemp = that.defaultTemp;
-          switch (that.fixedState.toLowerCase()) {
-            case 'cool':
-            case 'heat':
-            case 'manual':
-              device.fixedState = that.fixedState.toLowerCase();
-              break;
-            default:
-              device.fixedState = 'auto';
-          }
 
           podTimeLapse += 0.5;
           accessory = new SensiboPodAccessory(that, device);

@@ -21,8 +21,7 @@ Full configuration
 		"name": "Sensibo",
 		"apiKey": "YOUR_SENSIBO_API_ID",
 		"timeLapse": 5,
-		"hideHumidity": true,
-		"fixedState" : "auto"
+		"hideHumidity": true
 	}
 ],
 
@@ -48,7 +47,6 @@ Fields:
 - "apiKey": Sensibo API key, must be obtained from https://home.sensibo.com/me/api (required)
 - "timeLapse": Time in seconds to recycle the status from Sensibo. Too frequent will result in many timeout from sensibo server. Default is 30s. (Optional)
 - "hideHumidity": true or false. True would move the humidity info into thermostat detail. Default is false. (Optional)
-- "fixedState": "cool"|"heat"|"manual"|auto". Fixed the heating/cooling state of the aircon. If set to "manual", to be set with Homeapp manually. Default is "auto" where cool/heat decided if the target temp is lower or higher than current
 
 # Usage Notes
 

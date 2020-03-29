@@ -53,7 +53,6 @@ function SensiboPodAccessory(platform, device) {
   that.state.mode = 'cool'; // "heat", "cool", "fan" or "off"
   that.state.fanLevel = 'auto'; // "auto", "high", "medium" or "low"
   that.state.hideHumidity = device.hideHumidity || false;
-  that.state.fixedState = device.fixedState;
   that.state.refreshCycle = device.refreshCycle * 1000 || stateRefreshRate;
   that.temp.temperature = 16; // float
   that.temp.humidity = 0; // int
@@ -66,8 +65,6 @@ function SensiboPodAccessory(platform, device) {
     that.coolingThresholdTemperature,
     ', RefreshCycle: ',
     that.state.refreshCycle,
-    ', fixedState :',
-    that.state.fixedState,
   );
 
   this.loadData.bind(this);
@@ -230,22 +227,14 @@ function SensiboPodAccessory(platform, device) {
       else if (value >= 30.0) value = 30.0;
       var newTargetTemp = value;
 
-      switch (that.state.fixedState) {
-        case 'auto':
-          that.coolingThresholdTemperature = Math.round(that.temp.temperature);
+      that.coolingThresholdTemperature = Math.round(that.temp.temperature);
 
-          if (value <= that.coolingThresholdTemperature) {
-            that.state.mode = 'cool';
-          } else if (value > that.coolingThresholdTemperature) {
-            that.state.mode = 'heat';
-          }
-          break;
-        case 'manual':
-          // Do nothing
-          break;
-        default:
-          that.state.mode = that.state.fixedState;
+      if (value <= that.coolingThresholdTemperature) {
+        that.state.mode = 'cool';
+      } else if (value > that.coolingThresholdTemperature) {
+        that.state.mode = 'heat';
       }
+      break;
 
       that.state.on = true;
 
