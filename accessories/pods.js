@@ -132,7 +132,7 @@ function SensiboPodAccessory(platform, device) {
     .on('get', (callback) => {
       if (that.autoMode) {
         callback(null, Characteristic.TargetHeatingCoolingState.AUTO);
-      } else if (that.state.on) {
+      } else if (that.state.on === false) {
         callback(null, Characteristic.TargetHeatingCoolingState.OFF);
       } else {
         switch (that.state.mode) {
