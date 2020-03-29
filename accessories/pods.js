@@ -312,12 +312,13 @@ function refreshState(callback) {
         if (acState.on) {
           that.log('Externally turned on');
           that.state.on = true;
+          externalChange = true;
         } else {
           that.log('Externally turned off');
           that.state.on = false;
+          // This can happen when we hit our target temperature; don't consider
+          // this an external change
         }
-
-        externalChange = true;
       }
 
       if (that.state.targetTemperature !== newTargetTemperature) {
@@ -475,8 +476,6 @@ function updateDesiredState(that, callback) {
       newState.mode = 'heat';
       newState.targetTemperature = heatingThresholdTemperature;
       newState.on = true;
-    } else {
-      newState.on = false;
     }
   } else {
     const { userTargetTemperature } = newState;
