@@ -406,18 +406,27 @@ function updateDesiredState(that, callback) {
     that.coolingThresholdTemperature,
   );
 
+  const newState = {
+    ...that.state,
+  };
+
   if (that.autoMode) {
     if (that.temp.temperature > that.coolingThresholdTemperature) {
-      that.state.mode = 'cool';
-      that.state.targetTemperature = that.coolingThresholdTemperature;
-      that.state.on = true;
+      newState.mode = 'cool';
+      newState.targetTemperature = that.coolingThresholdTemperature;
+      newState.on = true;
     } else if (that.temp.temperature < that.heatingThresholdTemperature) {
-      that.state.mode = 'heat';
-      that.state.targetTemperature = that.heatingThresholdTemperature;
-      that.state.on = true;
+      newState.mode = 'heat';
+      newState.targetTemperature = that.heatingThresholdTemperature;
+      newState.on = true;
     } else {
-      that.state.on = false;
+      newState.on = false;
     }
+  }
+
+  if (statesEqual(that.state, newState)) {
+    callback();
+    return;
   }
 
   that.platform.api.submitState(that.deviceid, that.state, (data) => {
@@ -427,6 +436,14 @@ function updateDesiredState(that, callback) {
 
     callback();
   });
+}
+
+function statesEqual(left, right) {
+  return (
+    left.mode === right.mode &&
+    left.targetTemperature === right.targetTemperature &&
+    left.on === right.on
+  );
 }
 
 function logStateChange(that) {
