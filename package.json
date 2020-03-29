@@ -20,7 +20,7 @@
     "format": "yarn format:eslint && yarn format:prettier",
     "format:prettier": "prettier --write index.js 'accessories/*.js' 'lib/*.js'",
     "format:eslint": "eslint --fix index.js 'accessories/*.js' 'lib/*.js'",
-    "lint": "concurrently 'yarn lint:eslint' 'yarn lint:prettier' 'yarn lint:markdown'",
+    "lint": "concurrently 'yarn lint:eslint' 'yarn lint:prettier'",
     "lint:prettier": "prettier --list-different index.js 'accessories/*.js' 'lib/*.js'",
     "lint:eslint": "eslint index.js 'accessories/*.js' 'lib/*.js'"
   },
