@@ -29,7 +29,6 @@ function SensiboPlatform(log, config) {
   this.timeLapse = config.timeLapse;
   this.hideHumidity = config.hideHumidity || false;
   this.temperatureUnit = config.temperatureUnit;
-  this.defaultTemp = config.defaultTemp;
   this.api = sensibo;
   this.log = log;
   this.debug = log.debug;
@@ -63,7 +62,6 @@ SensiboPlatform.prototype = {
           device.refreshCycle = that.timeLapse + podTimeLapse;
           device.hideHumidity = that.hideHumidity || false;
           device.temperatureUnit = that.temperatureUnit;
-          device.defaultTemp = that.defaultTemp;
 
           podTimeLapse += 0.5;
           const accessory = new SensiboPodAccessory(that, device);

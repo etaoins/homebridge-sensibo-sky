@@ -50,7 +50,7 @@ function SensiboPodAccessory(platform, device) {
   // HomeKit does really strange things since we have to wait on the data to get populated
   // This is just intro information. It will be corrected in a couple of seconds.
   that.state.temperatureUnit = device.temperatureUnit; // "C" or "F"
-  that.state.targetTemperature = device.defaultTemp;
+  that.state.targetTemperature = undefined;
   that.state.on = false; // true or false
   that.state.mode = 'cool'; // "heat", "cool", "fan" or "off"
   that.state.fanLevel = 'auto'; // "auto", "high", "medium" or "low"
@@ -60,9 +60,9 @@ function SensiboPodAccessory(platform, device) {
   that.temp.humidity = 0; // int
 
   that.autoMode = false;
-  that.heatingThresholdTemperature = device.defaultTemp;
-  that.userTargetTemperature = device.defaultTemp;
-  that.coolingThresholdTemperature = device.defaultTemp;
+  that.heatingThresholdTemperature = undefined;
+  that.userTargetTemperature = undefined;
+  that.coolingThresholdTemperature = undefined;
 
   // End of initial information
   that.log(
@@ -459,19 +459,31 @@ function updateDesiredState(that, callback) {
   };
 
   if (that.autoMode) {
-    if (that.temp.temperature > that.coolingThresholdTemperature) {
+    const { heatingThresholdTemperature, coolingThresholdTemperature } = that;
+
+    if (
+      typeof coolingThresholdTemperature === 'number' &&
+      that.temp.temperature > coolingThresholdTemperature
+    ) {
       newState.mode = 'cool';
-      newState.targetTemperature = that.coolingThresholdTemperature;
+      newState.targetTemperature = coolingThresholdTemperature;
       newState.on = true;
-    } else if (that.temp.temperature < that.heatingThresholdTemperature) {
+    } else if (
+      typeof heatingThresholdTemperature &&
+      that.temp.temperature < heatingThresholdTemperature
+    ) {
       newState.mode = 'heat';
-      newState.targetTemperature = that.heatingThresholdTemperature;
+      newState.targetTemperature = heatingThresholdTemperature;
       newState.on = true;
     } else {
       newState.on = false;
     }
   } else {
-    newState.targetTemperature = that.userTargetTemperature;
+    const { userTargetTemperature } = newState;
+
+    if (typeof userTargetTemperature === 'number') {
+      newState.targetTemperature = userTargetTemperature;
+    }
   }
 
   if (statesEqual(that.state, newState)) {
