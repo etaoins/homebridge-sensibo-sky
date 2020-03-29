@@ -308,16 +308,6 @@ function refreshState(callback) {
           ? convertToCelsius(acState.targetTemperature)
           : acState.targetTemperature;
 
-      if (that.state.targetTemperature !== newTargetTemperature) {
-        that.log(
-          'Target temperature externally changed from %s to %s',
-          that.state.targetTemperature,
-          newTargetTemperature,
-        );
-
-        externalChange = true;
-      }
-
       if (that.state.on !== acState.on) {
         if (acState.on) {
           that.log('Externally turned on');
@@ -330,15 +320,32 @@ function refreshState(callback) {
         externalChange = true;
       }
 
-      if (that.state.mode !== acState.mode) {
-        that.log(
-          'Mode externally changed from %s to %s',
-          that.state.mode,
-          acState.mode,
-        );
+      if (that.state.targetTemperature !== newTargetTemperature) {
+        that.state.targetTemperature = newTargetTemperature;
 
+        if (acState.on) {
+          that.log(
+            'Target temperature externally changed from %s to %s',
+            that.state.targetTemperature,
+            newTargetTemperature,
+          );
+
+          externalChange = true;
+        }
+      }
+
+      if (that.state.mode !== acState.mode) {
         that.state.mode = acState.mode;
-        externalChange = true;
+
+        if (acState.on) {
+          that.log(
+            'Mode externally changed from %s to %s',
+            that.state.mode,
+            acState.mode,
+          );
+
+          externalChange = true;
+        }
       }
 
       that.state.fanLevel = acState.fanLevel;
@@ -346,6 +353,7 @@ function refreshState(callback) {
 
       if (externalChange && that.autoMode) {
         that.log('Detected external change; disengaging auto mode');
+
         that.autoMode = false;
         that.heatingThresholdTemperature = that.state.targetTemperature;
         that.coolingThresholdTemperature = that.state.targetTemperature;
@@ -353,6 +361,8 @@ function refreshState(callback) {
 
       if (that.autoMode) {
         updateDesiredState(that);
+      } else {
+        that.userTargetTemperature = that.state.targetTemperature;
       }
     }
 
