@@ -235,7 +235,6 @@ function SensiboPodAccessory(platform, device) {
       } else if (value > that.coolingThresholdTemperature) {
         that.state.mode = 'heat';
       }
-      break;
 
       that.state.on = true;
 
