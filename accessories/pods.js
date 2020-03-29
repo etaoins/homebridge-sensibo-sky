@@ -212,7 +212,7 @@ function SensiboPodAccessory(platform, device) {
       format: Characteristic.Formats.FLOAT,
       unit: Characteristic.Units.CELSIUS,
       maxValue: 30,
-      minValue: 16,
+      minValue: 18,
       minStep: 1,
       perms: [
         Characteristic.Perms.READ,
@@ -226,7 +226,7 @@ function SensiboPodAccessory(platform, device) {
 
     .on('set', function (value, callback) {
       // limit temperature to Sensibo standards
-      if (value <= 16.0) value = 16.0;
+      if (value <= 18.0) value = 18.0;
       else if (value >= 30.0) value = 30.0;
       var newTargetTemp = value;
 
