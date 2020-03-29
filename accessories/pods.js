@@ -313,7 +313,7 @@ function refreshState(callback) {
           that.log('Externally turned on');
           that.state.on = true;
         } else {
-          that.log('Externally turned of');
+          that.log('Externally turned off');
           that.state.on = false;
         }
 
