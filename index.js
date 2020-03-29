@@ -29,9 +29,7 @@ function SensiboPlatform(log, config) {
   this.apiKey = config['apiKey'];
   this.apiDebug = config['apiDebug'];
   this.timeLapse = config['timeLapse'];
-  this.AI = config['ai'] || false; //default state for ai
   this.hideHumidity = config['hideHumidity'] || false;
-  this.hideFan = config['hideFan'] || false;
   this.fixedState = config['fixedState'] || 'auto';
   this.temperatureUnit = config['temperatureUnit'];
   this.defaultTemp = config['defaultTemp'];
@@ -72,8 +70,6 @@ SensiboPlatform.prototype = {
 
           var accessory = undefined;
 
-          device.AI = that.AI;
-          device.hideFan = that.hideFan; // if AI is true, hideFan will be meaningless. If AI is false and hideFan is true, will make fan 100% all the time
           device.refreshCycle = that.timeLapse + podTimeLapse;
           device.hideHumidity = that.hideHumidity || false;
           device.temperatureUnit = that.temperatureUnit;

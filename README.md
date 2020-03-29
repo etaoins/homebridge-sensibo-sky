@@ -21,8 +21,6 @@ Full configuration
 		"name": "Sensibo",
 		"apiKey": "YOUR_SENSIBO_API_ID",
 		"timeLapse": 5,
-		"ai": true,
-		"hideFan": false,
 		"hideHumidity": true,
 		"fixedState" : "auto"
 	}
@@ -49,8 +47,6 @@ Fields:
 - "name": Can be anything (required)
 - "apiKey": Sensibo API key, must be obtained from https://home.sensibo.com/me/api (required)
 - "timeLapse": Time in seconds to recycle the status from Sensibo. Too frequent will result in many timeout from sensibo server. Default is 30s. (Optional)
-- "ai": true or false. In BETA and only works for cooling. This will set the fan speed automatically to achieve the target temperature asap. This will also hide the fan since it is no longer manually controlled. If there is demands, I can work on heating too. Default is turnoff (false). (Optional)
-- "hideFan": true or false. When set to true, the fan will be fixed at high provided ai is false. The Fan control is also hidden. Default is false.
 - "hideHumidity": true or false. True would move the humidity info into thermostat detail. Default is false. (Optional)
 - "fixedState": "cool"|"heat"|"manual"|auto". Fixed the heating/cooling state of the aircon. If set to "manual", to be set with Homeapp manually. Default is "auto" where cool/heat decided if the target temp is lower or higher than current
 
