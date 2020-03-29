@@ -470,7 +470,9 @@ function updateDesiredState(that, callback) {
     const targetTemperature =
       typeof userTargetTemperature === 'number'
         ? userTargetTemperature
-        : (heatingThresholdTemperature + coolingThresholdTemperature) / 2;
+        : Math.round(
+            (heatingThresholdTemperature + coolingThresholdTemperature) / 2,
+          );
 
     if (
       typeof coolingThresholdTemperature === 'number' &&
