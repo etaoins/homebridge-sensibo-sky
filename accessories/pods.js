@@ -255,7 +255,7 @@ function SensiboPodAccessory(platform, device) {
       // limit temperature to Sensibo standards
       if (value <= 16.0) value = 16.0;
       else if (value >= 30.0) value = 30.0;
-      var newTargetTemp = value; //Math.floor(value);
+      var newTargetTemp = value;
 
       switch (that.state.fixedState) {
         case 'auto':
@@ -285,15 +285,16 @@ function SensiboPodAccessory(platform, device) {
         ' new targetTemp: ',
         newTargetTemp,
       );
+
       if (that.state.targetTemperature !== newTargetTemp) {
         // only send if it had changed
-
         that.state.targetTemperature = newTargetTemp;
         that.log(
           that.name,
           ' Submit new target temperature: ',
           that.state.targetTemperature,
         );
+
         that.platform.api.submitState(that.deviceid, that.state, function (
           data,
         ) {
@@ -314,18 +315,18 @@ function SensiboPodAccessory(platform, device) {
     .on('set', function (value, callback) {
       that.log(
         that.name,
-        ': Setting threshold (name: ',
+        ': Setting cool threshold (name: ',
         that.name,
         ', threshold: ',
         value,
         ')',
       );
       that.coolingThresholdTemperature = value;
+
       that
         .getService(Service.Thermostat)
         .getCharacteristic(Characteristic.TargetTemperature)
-        .setValue(value, callback);
-      //that.coolingThresholdTemperature = that.temp.temperature;
+        .setValue(that.state.targetTemperature, callback);
     });
 
   // Temperature Display Units characteristic
