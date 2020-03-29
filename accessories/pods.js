@@ -102,8 +102,9 @@ function SensiboPodAccessory(platform, device) {
   this.getService(Service.Thermostat)
     .getCharacteristic(Characteristic.CurrentHeatingCoolingState)
     .on('get', (callback) => {
-      if (!that.state.on) {
-        // Convert state.on parameter to TargetHeatingCoolingState
+      if (that.autoMode) {
+        callback(null, Characteristic.CurrentHeatingCoolingState.AUTO);
+      } else if (!that.state.on) {
         callback(null, Characteristic.TargetHeatingCoolingState.OFF);
       } else {
         switch (that.state.mode) {
