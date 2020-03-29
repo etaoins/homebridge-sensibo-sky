@@ -453,7 +453,11 @@ function updateDesiredState(that, stateDelta, callback) {
     ...stateDelta,
   };
 
-  if (that.autoMode) {
+  if (
+    that.autoMode &&
+    typeof coolingThresholdTemperature === 'number' &&
+    typeof heatingThresholdTemperature === 'number'
+  ) {
     const targetTemperature =
       typeof userTargetTemperature === 'number'
         ? userTargetTemperature
@@ -461,24 +465,27 @@ function updateDesiredState(that, stateDelta, callback) {
             (heatingThresholdTemperature + coolingThresholdTemperature) / 2,
           );
 
-    if (
-      typeof coolingThresholdTemperature === 'number' &&
-      that.temp.temperature > coolingThresholdTemperature
-    ) {
+    if (that.temp.temperature > coolingThresholdTemperature) {
       that.log('Hotter than cooling threshold, switching to cool mode');
 
       newState.mode = 'cool';
-      newState.targetTemperature = targetTemperature;
+      newState.targetTemperature = heatingThresholdTemperature;
       newState.on = true;
-    } else if (
-      typeof heatingThresholdTemperature === 'number' &&
-      that.temp.temperature < heatingThresholdTemperature
-    ) {
+    } else if (that.temp.temperature < heatingThresholdTemperature) {
       that.log('Colder than heating threshold, switching to hot mode');
 
       newState.mode = 'heat';
-      newState.targetTemperature = targetTemperature;
+      newState.targetTemperature = coolingThresholdTemperature;
       newState.on = true;
+    } else if (
+      that.state.on &&
+      ((that.state.mode === 'heat' &&
+        that.temp.temperature > userTargetTemperature) ||
+        (that.state.mode === 'cool' &&
+          that.temp.temperature < userTargetTemperature))
+    ) {
+      that.log('Crossed temperature threshold, switching off');
+      newState.on = false;
     }
   } else if (typeof userTargetTemperature === 'number') {
     newState.targetTemperature = userTargetTemperature;
