@@ -4,7 +4,6 @@ let Accessory;
 let Service;
 let Characteristic;
 let uuid;
-const tempOffset = 1;
 const stateTimeout = 30000; // in ms to min time elapse to call for refresh
 const tempTimeout = 10000; // in ms to min time elapse before next call for refresh
 const stateRefreshRate = 30000; // Interval for status update
@@ -395,7 +394,7 @@ function refreshTemperature(callback) {
   that.platform.api.getMeasurements(that.deviceid, (myData) => {
     data = myData;
     if (data !== undefined) {
-      that.temp.temperature = data[0].temperature * tempOffset;
+      that.temp.temperature = data[0].temperature;
       that.temp.humidity = data[0].humidity;
       that.temp.updatetime = new Date(); // Set our last update time.
     }
