@@ -73,7 +73,7 @@ function SensiboPodAccessory(platform, device) {
     that.state.refreshCycle,
   );
 
-  this.loadData.bind(this);
+  this.loadData();
   setInterval(this.loadData.bind(this), that.state.refreshCycle);
 
   // AccessoryInformation characteristic
