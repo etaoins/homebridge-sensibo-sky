@@ -105,7 +105,7 @@ function SensiboPodAccessory(platform, device) {
       if (that.autoMode) {
         callback(null, Characteristic.CurrentHeatingCoolingState.AUTO);
       } else if (!that.state.on) {
-        callback(null, Characteristic.TargetHeatingCoolingState.OFF);
+        callback(null, Characteristic.CurrentHeatingCoolingState.OFF);
       } else {
         switch (that.state.mode) {
           case 'cool': // HomeKit only accepts HEAT/COOL/OFF, so we have to determine if we are Heating, Cooling or OFF.
@@ -129,8 +129,9 @@ function SensiboPodAccessory(platform, device) {
   this.getService(Service.Thermostat)
     .getCharacteristic(Characteristic.TargetHeatingCoolingState)
     .on('get', (callback) => {
-      if (!that.state.on) {
-        // Convert state.on parameter to TargetHeatingCoolingState
+      if (that.autoMode) {
+        callback(null, Characteristic.TargetHeatingCoolingState.AUTO);
+      } else if (that.state.on) {
         callback(null, Characteristic.TargetHeatingCoolingState.OFF);
       } else {
         switch (that.state.mode) {
