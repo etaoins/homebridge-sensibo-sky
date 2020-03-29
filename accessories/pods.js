@@ -429,6 +429,7 @@ function updateDesiredState(that, callback) {
     return;
   }
 
+  that.state = newState;
   that.platform.api.submitState(that.deviceid, that.state, (data) => {
     if (data !== undefined) {
       logStateChange(that);
