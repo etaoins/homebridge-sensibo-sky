@@ -473,7 +473,8 @@ function updateDesiredState(that, stateDelta, callback) {
       typeof coolingThresholdTemperature === 'number' &&
       that.temp.temperature > coolingThresholdTemperature
     ) {
-      // Hotter than cooling threshold
+      that.log('Hotter than cooling threshold, switching to cool mode');
+
       newState.mode = 'cool';
       newState.targetTemperature = targetTemperature;
       newState.on = true;
@@ -481,7 +482,8 @@ function updateDesiredState(that, stateDelta, callback) {
       typeof heatingThresholdTemperature === 'number' &&
       that.temp.temperature < heatingThresholdTemperature
     ) {
-      // Colder than heating threshold
+      that.log('Colder than heating threshold, switching to hot mode');
+
       newState.mode = 'heat';
       newState.targetTemperature = targetTemperature;
       newState.on = true;
