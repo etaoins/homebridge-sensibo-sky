@@ -301,21 +301,39 @@ function refreshState(callback) {
   }
 
   // Update the state
+  const prevTargetTemperature = that.state.targetTemperature;
+  const prevOn = that.state.on;
   that.platform.api.getState(that.deviceid, (acState) => {
     if (acState !== undefined) {
-      that.state.targetTemperature = acState.targetTemperature;
       that.state.temperatureUnit = acState.temperatureUnit;
       if (that.state.temperatureUnit === 'F') {
         // all internal logic is in celsius, so convert to celsius
         that.state.targetTemperature = convertToCelsius(
-          that.state.targetTemperature,
+          acState.targetTemperature,
         );
+      } else {
+        that.state.targetTemperature = acState.targetTemperature;
       }
+
       that.state.on = acState.on;
 
       that.state.mode = acState.mode;
       that.state.fanLevel = acState.fanLevel;
       that.state.updatetime = new Date(); // Set our last update time.
+
+      if (
+        that.state.targetTemperature !== prevTargetTemperature ||
+        that.state.on !== prevOn
+      ) {
+        that.log('Detected external change; disengaging auto mode');
+        that.autoMode = false;
+        that.heatingThresholdTemperature = that.state.targetTemperature;
+        that.coolingThresholdTemperature = that.state.targetTemperature;
+      }
+
+      if (that.autoMode) {
+        updateDesiredState(that);
+      }
     }
 
     callback();
@@ -425,7 +443,9 @@ function updateDesiredState(that, callback) {
   }
 
   if (statesEqual(that.state, newState)) {
-    callback();
+    if (callback) {
+      callback();
+    }
     return;
   }
 
@@ -435,7 +455,9 @@ function updateDesiredState(that, callback) {
       logStateChange(that);
     }
 
-    callback();
+    if (callback) {
+      callback();
+    }
   });
 }
 
