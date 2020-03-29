@@ -307,8 +307,6 @@ function refreshState(callback) {
   // Update the state
   that.platform.api.getState(that.deviceid, (acState) => {
     if (acState !== undefined) {
-      let externalChange = false;
-
       that.state.temperatureUnit = acState.temperatureUnit;
 
       const newTargetTemperature =
@@ -320,12 +318,9 @@ function refreshState(callback) {
         if (acState.on) {
           that.log('Externally turned on');
           that.state.on = true;
-          externalChange = true;
         } else {
           that.log('Externally turned off');
           that.state.on = false;
-          // This can happen when we hit our target temperature; don't consider
-          // this an external change
         }
       }
 
@@ -336,8 +331,6 @@ function refreshState(callback) {
             that.state.targetTemperature,
             newTargetTemperature,
           );
-
-          externalChange = true;
         }
 
         that.state.targetTemperature = newTargetTemperature;
@@ -350,8 +343,6 @@ function refreshState(callback) {
             that.state.mode,
             acState.mode,
           );
-
-          externalChange = true;
         }
 
         that.state.mode = acState.mode;
@@ -359,14 +350,6 @@ function refreshState(callback) {
 
       that.state.fanLevel = acState.fanLevel;
       that.state.updatetime = new Date(); // Set our last update time.
-
-      if (externalChange && that.autoMode) {
-        that.log('Detected external change; disengaging auto mode');
-
-        that.autoMode = false;
-        that.heatingThresholdTemperature = that.state.targetTemperature;
-        that.coolingThresholdTemperature = that.state.targetTemperature;
-      }
 
       if (that.autoMode) {
         updateDesiredState(that, {});
