@@ -447,13 +447,19 @@ function identify() {
 }
 
 function updateDesiredState(that, callback) {
+  const {
+    heatingThresholdTemperature,
+    userTargetTemperature,
+    coolingThresholdTemperature,
+  } = that;
+
   that.log(
     'Calculating desired state: autoMode: %s, roomTemp: %s, heatingThreshold: %s, userTarget: %s, coolingThreshold: %s',
     that.autoMode,
     that.temp.temperature,
-    that.heatingThresholdTemperature,
-    that.userTargetTemperature,
-    that.coolingThresholdTemperature,
+    heatingThresholdTemperature,
+    userTargetTemperature,
+    coolingThresholdTemperature,
   );
 
   const newState = {
@@ -461,12 +467,6 @@ function updateDesiredState(that, callback) {
   };
 
   if (that.autoMode) {
-    const {
-      heatingThresholdTemperature,
-      userTargetTemperature,
-      coolingThresholdTemperature,
-    } = that;
-
     const targetTemperature =
       typeof userTargetTemperature === 'number'
         ? userTargetTemperature
@@ -489,12 +489,8 @@ function updateDesiredState(that, callback) {
       newState.targetTemperature = targetTemperature;
       newState.on = true;
     }
-  } else {
-    const { userTargetTemperature } = newState;
-
-    if (typeof userTargetTemperature === 'number') {
-      newState.targetTemperature = userTargetTemperature;
-    }
+  } else if (typeof userTargetTemperature === 'number') {
+    newState.targetTemperature = userTargetTemperature;
   }
 
   if (statesEquivalent(that.state, newState)) {
