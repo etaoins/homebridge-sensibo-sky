@@ -519,7 +519,7 @@ function updateDesiredState(that, callback) {
 function statesEquivalent(left, right) {
   if (left.on === false && right.on === false) {
     // If both states are off the other values don't matter
-    return;
+    return true;
   }
 
   return (
