@@ -437,7 +437,7 @@ function identify() {
 
 function updateDesiredState(that, callback) {
   that.log(
-    'Setting desired state: autoMode: %s, roomTemp: %s, heatingThreshold: %s, coolingThreshold: %s',
+    'Calculating desired state: autoMode: %s, roomTemp: %s, heatingThreshold: %s, coolingThreshold: %s',
     that.autoMode,
     that.temp.temperature,
     that.heatingThresholdTemperature,
