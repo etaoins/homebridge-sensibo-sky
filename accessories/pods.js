@@ -448,10 +448,11 @@ function identify() {
 
 function updateDesiredState(that, callback) {
   that.log(
-    'Calculating desired state: autoMode: %s, roomTemp: %s, heatingThreshold: %s, coolingThreshold: %s',
+    'Calculating desired state: autoMode: %s, roomTemp: %s, heatingThreshold: %s, userTarget: %s, coolingThreshold: %s',
     that.autoMode,
     that.temp.temperature,
     that.heatingThresholdTemperature,
+    that.userTargetTemperature,
     that.coolingThresholdTemperature,
   );
 
@@ -460,21 +461,32 @@ function updateDesiredState(that, callback) {
   };
 
   if (that.autoMode) {
-    const { heatingThresholdTemperature, coolingThresholdTemperature } = that;
+    const {
+      heatingThresholdTemperature,
+      userTargetTemperature,
+      coolingThresholdTemperature,
+    } = that;
+
+    const targetTemperature =
+      typeof userTargetTemperature === 'number'
+        ? userTargetTemperature
+        : (heatingThresholdTemperature + coolingThresholdTemperature) / 2;
 
     if (
       typeof coolingThresholdTemperature === 'number' &&
       that.temp.temperature > coolingThresholdTemperature
     ) {
+      // Hotter than cooling threshold
       newState.mode = 'cool';
-      newState.targetTemperature = coolingThresholdTemperature;
+      newState.targetTemperature = targetTemperature;
       newState.on = true;
     } else if (
-      typeof heatingThresholdTemperature &&
+      typeof heatingThresholdTemperature === 'number' &&
       that.temp.temperature < heatingThresholdTemperature
     ) {
+      // Colder than heating threshold
       newState.mode = 'heat';
-      newState.targetTemperature = heatingThresholdTemperature;
+      newState.targetTemperature = targetTemperature;
       newState.on = true;
     }
   } else {
