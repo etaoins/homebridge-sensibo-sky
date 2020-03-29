@@ -496,7 +496,7 @@ function updateDesiredState(that, stateDelta, callback) {
         that.temp.temperature > targetTemperature) ||
       (that.state.mode === 'cool' && that.temp.temperature < targetTemperature)
     ) {
-      if (that.state.on === false) {
+      if (that.state.on === true) {
         that.log('Crossed temperature threshold, switching off');
       }
 
