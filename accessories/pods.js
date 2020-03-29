@@ -303,10 +303,10 @@ function refreshState(callback) {
   // Update the state
   that.platform.api.getState(that.deviceid, (acState) => {
     if (acState !== undefined) {
-      // all internal logic is in celsius, so convert to celsius
       that.state.targetTemperature = acState.targetTemperature;
       that.state.temperatureUnit = acState.temperatureUnit;
       if (that.state.temperatureUnit === 'F') {
+        // all internal logic is in celsius, so convert to celsius
         that.state.targetTemperature = convertToCelsius(
           that.state.targetTemperature,
         );
@@ -398,6 +398,14 @@ function identify() {
 }
 
 function updateDesiredState(that, callback) {
+  that.log(
+    'Setting desired state: auto=%s temperature=%s heatingThreshold=%s coolingThreshold=%s',
+    that.autoMode,
+    that.temp.temperature,
+    that.heatingThresholdTemperature,
+    that.coolingThresholdTemperature,
+  );
+
   if (that.autoMode) {
     if (that.temp.temperature > that.coolingThresholdTemperature) {
       that.state.mode = 'cool';
