@@ -56,6 +56,7 @@ function SensiboPodAccessory(platform, device) {
   that.state.refreshCycle = device.refreshCycle * 1000 || stateRefreshRate;
   that.temp.temperature = 16; // float
   that.temp.humidity = 0; // int
+  that.heatingThresholdTemperature = device.defaultTemp;
   that.coolingThresholdTemperature = device.defaultTemp;
   // End of initial information
   that.log(
@@ -267,6 +268,22 @@ function SensiboPodAccessory(platform, device) {
       callback();
     });
 
+  // Heating Threshold Temperature Characteristic
+  this.getService(Service.Thermostat)
+    .getCharacteristic(Characteristic.HeatingThresholdTemperature)
+    .on('get', function (callback) {
+      callback(null, that.heatingThresholdTemperature);
+    })
+    .on('set', function (value, callback) {
+      that.log(that.name, ': Setting heating threshold: ', value);
+      that.heatingThresholdTemperature = value;
+
+      that
+        .getService(Service.Thermostat)
+        .getCharacteristic(Characteristic.TargetTemperature)
+        .setValue(that.state.targetTemperature, callback);
+    });
+
   // Cooling Threshold Temperature Characteristic
   this.getService(Service.Thermostat)
     .getCharacteristic(Characteristic.CoolingThresholdTemperature)
@@ -274,14 +291,7 @@ function SensiboPodAccessory(platform, device) {
       callback(null, that.coolingThresholdTemperature);
     })
     .on('set', function (value, callback) {
-      that.log(
-        that.name,
-        ': Setting cool threshold (name: ',
-        that.name,
-        ', threshold: ',
-        value,
-        ')',
-      );
+      that.log(that.name, ': Setting cooling threshold');
       that.coolingThresholdTemperature = value;
 
       that
