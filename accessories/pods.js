@@ -438,7 +438,7 @@ function setFanLevel(that, value) {
   var curFanState = that.state.fanLevel;
 
   if (that.state.hideFan) {
-    that.state.fanLevel = 'high';
+    that.state.fanLevel = 'auto';
   } else {
     if (value == 0) {
       that.state.fanLevel = 'auto';
