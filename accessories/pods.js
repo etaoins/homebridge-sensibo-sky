@@ -156,33 +156,29 @@ function SensiboPodAccessory(platform, device) {
       that.log(that.name, 'State change set:', value);
 
       switch (value) {
-        case Characteristic.TargetHeatingCoolingState.OFF:
-          that.state.on = false;
-
-          that.autoMode = false;
-          break;
         case Characteristic.TargetHeatingCoolingState.COOL:
-          that.state.mode = 'cool';
-          that.state.on = true;
-
           that.autoMode = false;
+          updateDesiredState(that, { on: true, mode: 'cool' }, callback);
+
           break;
         case Characteristic.TargetHeatingCoolingState.HEAT:
-          that.state.mode = 'heat';
-          that.state.on = true;
-
           that.autoMode = false;
+          updateDesiredState(that, { on: true, mode: 'heat' }, callback);
+
           break;
         case Characteristic.TargetHeatingCoolingState.AUTO:
           that.autoMode = true;
+          updateDesiredState(that, {}, callback);
+
           break;
+
+        case Characteristic.TargetHeatingCoolingState.OFF:
         default:
-          that.state.mode = 'cool';
-          that.state.on = false;
+          that.autoMode = false;
+          updateDesiredState(that, { on: false }, callback);
+
           break;
       }
-
-      updateDesiredState(that, callback);
     });
 
   // Current Temperature characteristic
@@ -217,7 +213,7 @@ function SensiboPodAccessory(platform, device) {
       that.log(that.name, ': Setting target temperature: ', value);
       that.userTargetTemperature = value;
 
-      updateDesiredState(that, callback);
+      updateDesiredState(that, {}, callback);
     });
 
   // Heating Threshold Temperature Characteristic
@@ -231,7 +227,7 @@ function SensiboPodAccessory(platform, device) {
       that.log(that.name, ': Setting heating threshold: ', value);
       that.heatingThresholdTemperature = clampTemperature(value);
 
-      updateDesiredState(that, callback);
+      updateDesiredState(that, {}, callback);
     });
 
   // Cooling Threshold Temperature Characteristic
@@ -245,7 +241,7 @@ function SensiboPodAccessory(platform, device) {
       that.log(that.name, ': Setting cooling threshold: ', value);
       that.coolingThresholdTemperature = clampTemperature(value);
 
-      updateDesiredState(that, callback);
+      updateDesiredState(that, {}, callback);
     });
 
   // Temperature Display Units characteristic
@@ -361,7 +357,7 @@ function refreshState(callback) {
       }
 
       if (that.autoMode) {
-        updateDesiredState(that);
+        updateDesiredState(that, {});
       } else {
         that.userTargetTemperature = that.state.targetTemperature;
       }
@@ -446,7 +442,7 @@ function identify() {
   this.log('Identify! (name: %s)', this.name);
 }
 
-function updateDesiredState(that, callback) {
+function updateDesiredState(that, stateDelta, callback) {
   const {
     heatingThresholdTemperature,
     userTargetTemperature,
@@ -464,6 +460,7 @@ function updateDesiredState(that, callback) {
 
   const newState = {
     ...that.state,
+    ...stateDelta,
   };
 
   if (that.autoMode) {
