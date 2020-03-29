@@ -486,7 +486,7 @@ function updateDesiredState(that, callback) {
     }
   }
 
-  if (statesEqual(that.state, newState)) {
+  if (statesEquivalent(that.state, newState)) {
     if (callback) {
       callback();
     }
@@ -505,7 +505,12 @@ function updateDesiredState(that, callback) {
   });
 }
 
-function statesEqual(left, right) {
+function statesEquivalent(left, right) {
+  if (left.on === false && right.on === false) {
+    // If both states are off the other values don't matter
+    return;
+  }
+
   return (
     left.mode === right.mode &&
     left.targetTemperature === right.targetTemperature &&
