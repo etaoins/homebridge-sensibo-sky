@@ -98,9 +98,9 @@ function SensiboPodAccessory(platform, device) {
 
   // Thermostat Service
   // Current Heating/Cooling Mode characteristic
-  this.addService(Service.Thermostat);
+  const thermostatService = this.addService(Service.Thermostat);
 
-  this.getService(Service.Thermostat)
+  thermostatService
     .getCharacteristic(Characteristic.CurrentHeatingCoolingState)
     .on('get', (callback) => {
       if (that.autoMode) {
@@ -127,7 +127,7 @@ function SensiboPodAccessory(platform, device) {
     });
 
   // Target Heating/Cooling Mode characteristic
-  this.getService(Service.Thermostat)
+  thermostatService
     .getCharacteristic(Characteristic.TargetHeatingCoolingState)
     .on('get', (callback) => {
       if (that.autoMode) {
@@ -182,7 +182,7 @@ function SensiboPodAccessory(platform, device) {
     });
 
   // Current Temperature characteristic
-  this.getService(Service.Thermostat)
+  thermostatService
     .getCharacteristic(Characteristic.CurrentTemperature)
     .on('get', (callback) => {
       callback(null, that.temp.temperature);
@@ -202,7 +202,7 @@ function SensiboPodAccessory(platform, device) {
   };
 
   // Target Temperature characteristic
-  this.getService(Service.Thermostat)
+  thermostatService
     .getCharacteristic(Characteristic.TargetTemperature)
     .setProps(TEMPERATURE_PROPS)
     .on('get', (callback) => {
@@ -217,7 +217,7 @@ function SensiboPodAccessory(platform, device) {
     });
 
   // Heating Threshold Temperature Characteristic
-  this.getService(Service.Thermostat)
+  thermostatService
     .getCharacteristic(Characteristic.HeatingThresholdTemperature)
     .setProps({ ...TEMPERATURE_PROPS, minStep: 0.5 })
     .on('get', (callback) => {
@@ -231,7 +231,7 @@ function SensiboPodAccessory(platform, device) {
     });
 
   // Cooling Threshold Temperature Characteristic
-  this.getService(Service.Thermostat)
+  thermostatService
     .getCharacteristic(Characteristic.CoolingThresholdTemperature)
     .setProps({ ...TEMPERATURE_PROPS, minStep: 0.5 })
     .on('get', (callback) => {
@@ -245,7 +245,7 @@ function SensiboPodAccessory(platform, device) {
     });
 
   // Temperature Display Units characteristic
-  this.getService(Service.Thermostat)
+  thermostatService
     .getCharacteristic(Characteristic.TemperatureDisplayUnits)
     .on('get', (callback) => {
       if (that.state.temperatureUnit === 'F') {
@@ -258,15 +258,13 @@ function SensiboPodAccessory(platform, device) {
   // Relative Humidity Service
   // Current Relative Humidity characteristic
   if (that.state.hideHumidity) {
-    this.getService(Service.Thermostat)
+    thermostatService
       .getCharacteristic(Characteristic.CurrentRelativeHumidity)
       .on('get', (callback) => {
         callback(null, Math.round(that.temp.humidity)); // int value
       });
   } else {
-    this.addService(Service.HumiditySensor);
-
-    this.getService(Service.HumiditySensor)
+    this.addService(Service.HumiditySensor)
       .getCharacteristic(Characteristic.CurrentRelativeHumidity)
       .on('get', (callback) => {
         callback(null, Math.round(that.temp.humidity)); // int value
