@@ -64,16 +64,6 @@ function SensiboPodAccessory(platform, device) {
   that.userTargetTemperature = undefined;
   that.coolingThresholdTemperature = undefined;
 
-  // End of initial information
-  that.log(
-    that.name,
-    that.state.temperatureUnit,
-    that.state.targetTemperature,
-    that.coolingThresholdTemperature,
-    ', RefreshCycle: ',
-    that.state.refreshCycle,
-  );
-
   this.loadData();
   setInterval(this.loadData.bind(this), that.state.refreshCycle);
 
@@ -153,20 +143,21 @@ function SensiboPodAccessory(platform, device) {
       }
     })
     .on('set', (value, callback) => {
-      that.log(that.name, 'State change set:', value);
-
       switch (value) {
         case Characteristic.TargetHeatingCoolingState.COOL:
+          that.log('Setting target mode to cool');
           that.autoMode = false;
           updateDesiredState(that, { on: true, mode: 'cool' }, callback);
 
           break;
         case Characteristic.TargetHeatingCoolingState.HEAT:
+          that.log('Setting target mode to heat');
           that.autoMode = false;
           updateDesiredState(that, { on: true, mode: 'heat' }, callback);
 
           break;
         case Characteristic.TargetHeatingCoolingState.AUTO:
+          that.log('Setting target mode to auto');
           that.autoMode = true;
           updateDesiredState(that, {}, callback);
 
@@ -174,6 +165,7 @@ function SensiboPodAccessory(platform, device) {
 
         case Characteristic.TargetHeatingCoolingState.OFF:
         default:
+          that.log('Setting target mode to off');
           that.autoMode = false;
           updateDesiredState(that, { on: false }, callback);
 
@@ -210,7 +202,7 @@ function SensiboPodAccessory(platform, device) {
     })
 
     .on('set', (value, callback) => {
-      that.log(that.name, ': Setting target temperature: ', value);
+      that.log(`Setting target temperature: ${value}`);
       that.userTargetTemperature = value;
 
       updateDesiredState(that, {}, callback);
@@ -224,7 +216,7 @@ function SensiboPodAccessory(platform, device) {
       callback(null, that.heatingThresholdTemperature);
     })
     .on('set', (value, callback) => {
-      that.log(that.name, ': Setting heating threshold: ', value);
+      that.log(`Setting heating threshold: ${value}`);
       that.heatingThresholdTemperature = clampTemperature(value);
 
       updateDesiredState(that, {}, callback);
@@ -238,7 +230,7 @@ function SensiboPodAccessory(platform, device) {
       callback(null, that.coolingThresholdTemperature);
     })
     .on('set', (value, callback) => {
-      that.log(that.name, ': Setting cooling threshold: ', value);
+      that.log(`Setting cooling threshold: ${value}`);
       that.coolingThresholdTemperature = clampTemperature(value);
 
       updateDesiredState(that, {}, callback);
