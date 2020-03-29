@@ -223,7 +223,7 @@ function SensiboPodAccessory(platform, device) {
   // Heating Threshold Temperature Characteristic
   this.getService(Service.Thermostat)
     .getCharacteristic(Characteristic.HeatingThresholdTemperature)
-    .setProps(TEMPERATURE_PROPS)
+    .setProps({ ...TEMPERATURE_PROPS, minStep: 0.5 })
     .on('get', (callback) => {
       callback(null, that.heatingThresholdTemperature);
     })
@@ -237,7 +237,7 @@ function SensiboPodAccessory(platform, device) {
   // Cooling Threshold Temperature Characteristic
   this.getService(Service.Thermostat)
     .getCharacteristic(Characteristic.CoolingThresholdTemperature)
-    .setProps(TEMPERATURE_PROPS)
+    .setProps({ ...TEMPERATURE_PROPS, minStep: 0.5 })
     .on('get', (callback) => {
       callback(null, that.coolingThresholdTemperature);
     })
