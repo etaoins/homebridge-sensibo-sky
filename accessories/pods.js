@@ -322,8 +322,6 @@ function refreshState(callback) {
       }
 
       if (that.state.targetTemperature !== newTargetTemperature) {
-        that.state.targetTemperature = newTargetTemperature;
-
         if (acState.on) {
           that.log(
             'Target temperature externally changed from %s to %s',
@@ -333,11 +331,11 @@ function refreshState(callback) {
 
           externalChange = true;
         }
+
+        that.state.targetTemperature = newTargetTemperature;
       }
 
       if (that.state.mode !== acState.mode) {
-        that.state.mode = acState.mode;
-
         if (acState.on) {
           that.log(
             'Mode externally changed from %s to %s',
@@ -347,6 +345,8 @@ function refreshState(callback) {
 
           externalChange = true;
         }
+
+        that.state.mode = acState.mode;
       }
 
       that.state.fanLevel = acState.fanLevel;
