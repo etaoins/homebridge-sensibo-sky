@@ -466,25 +466,30 @@ function updateDesiredState(that, stateDelta, callback) {
           );
 
     if (that.temp.temperature > coolingThresholdTemperature) {
-      that.log('Hotter than cooling threshold, switching to cool mode');
+      if (that.state.mode !== 'cool' || that.state.on !== true) {
+        that.log('Hotter than cooling threshold, switching to cool mode');
+      }
 
       newState.mode = 'cool';
       newState.targetTemperature = heatingThresholdTemperature;
       newState.on = true;
     } else if (that.temp.temperature < heatingThresholdTemperature) {
-      that.log('Colder than heating threshold, switching to hot mode');
+      if (that.state.mode !== 'heat' || that.state.on !== true) {
+        that.log('Colder than heating threshold, switching to hot mode');
+      }
 
       newState.mode = 'heat';
       newState.targetTemperature = coolingThresholdTemperature;
       newState.on = true;
     } else if (
-      that.state.on &&
-      ((that.state.mode === 'heat' &&
-        that.temp.temperature > userTargetTemperature) ||
-        (that.state.mode === 'cool' &&
-          that.temp.temperature < userTargetTemperature))
+      (that.state.mode === 'heat' &&
+        that.temp.temperature > targetTemperature) ||
+      (that.state.mode === 'cool' && that.temp.temperature < targetTemperature)
     ) {
-      that.log('Crossed temperature threshold, switching off');
+      if (that.state.on === false) {
+        that.log('Crossed temperature threshold, switching off');
+      }
+
       newState.on = false;
     }
   } else if (typeof userTargetTemperature === 'number') {
