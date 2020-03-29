@@ -8,26 +8,14 @@ const stateTimeout = 30000; // in ms to min time elapse to call for refresh
 const tempTimeout = 10000; // in ms to min time elapse before next call for refresh
 const stateRefreshRate = 30000; // Interval for status update
 
-const COMMON_TEMPERATURE_PROPS = {
-  format: Characteristic.Formats.FLOAT,
-  unit: Characteristic.Units.CELSIUS,
-  perms: [
-    Characteristic.Perms.READ,
-    Characteristic.Perms.WRITE,
-    Characteristic.Perms.NOTIFY,
-  ],
-};
-
-const SENSIBO_TEMPERATURE_PROPS = {
-  ...COMMON_TEMPERATURE_PROPS,
+const SENSIBO_TEMPERATURE_RANGE = {
   // This limited to what Sensibo/AC unit understand
   minValue: 18,
   maxValue: 30,
   minStep: 1,
 };
 
-const TARGET_TEMPERATURE_PROPS = {
-  ...COMMON_TEMPERATURE_PROPS,
+const TARGET_TEMPERATURE_RANGE = {
   // This is virtual so we can accept more values
   minValue: 16,
   maxValue: 30,
@@ -206,10 +194,20 @@ function SensiboPodAccessory(platform, device) {
       callback(null, that.temp.temperature);
     });
 
+  const commonTemperatureProps = {
+    format: Characteristic.Formats.FLOAT,
+    unit: Characteristic.Units.CELSIUS,
+    perms: [
+      Characteristic.Perms.READ,
+      Characteristic.Perms.WRITE,
+      Characteristic.Perms.NOTIFY,
+    ],
+  };
+
   // Target Temperature characteristic
   thermostatService
     .getCharacteristic(Characteristic.TargetTemperature)
-    .setProps(SENSIBO_TEMPERATURE_PROPS)
+    .setProps({ ...commonTemperatureProps, ...SENSIBO_TEMPERATURE_RANGE })
     .on('get', (callback) => {
       callback(null, that.state.targetTemperature);
     })
@@ -218,7 +216,7 @@ function SensiboPodAccessory(platform, device) {
       that.log(`Setting target temperature: ${value}`);
       that.userTargetTemperature = clampTemperature(
         value,
-        SENSIBO_TEMPERATURE_PROPS,
+        SENSIBO_TEMPERATURE_RANGE,
       );
 
       updateDesiredState(that, {}, callback);
@@ -227,7 +225,7 @@ function SensiboPodAccessory(platform, device) {
   // Heating Threshold Temperature Characteristic
   thermostatService
     .getCharacteristic(Characteristic.HeatingThresholdTemperature)
-    .setProps(TARGET_TEMPERATURE_PROPS)
+    .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
     .on('get', (callback) => {
       callback(null, that.heatingThresholdTemperature);
     })
@@ -235,7 +233,7 @@ function SensiboPodAccessory(platform, device) {
       that.log(`Setting heating threshold: ${value}`);
       that.heatingThresholdTemperature = clampTemperature(
         value,
-        TARGET_TEMPERATURE_PROPS,
+        TARGET_TEMPERATURE_RANGE,
       );
 
       updateDesiredState(that, {}, callback);
@@ -244,7 +242,7 @@ function SensiboPodAccessory(platform, device) {
   // Cooling Threshold Temperature Characteristic
   thermostatService
     .getCharacteristic(Characteristic.CoolingThresholdTemperature)
-    .setProps(TARGET_TEMPERATURE_PROPS)
+    .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
     .on('get', (callback) => {
       callback(null, that.coolingThresholdTemperature);
     })
@@ -252,7 +250,7 @@ function SensiboPodAccessory(platform, device) {
       that.log(`Setting cooling threshold: ${value}`);
       that.coolingThresholdTemperature = clampTemperature(
         value,
-        TARGET_TEMPERATURE_PROPS,
+        TARGET_TEMPERATURE_RANGE,
       );
 
       updateDesiredState(that, {}, callback);
@@ -468,7 +466,7 @@ function updateDesiredState(that, stateDelta, callback) {
         ? userTargetTemperature
         : clampTemperature(
             heatingThresholdTemperature + coolingThresholdTemperature,
-            SENSIBO_TEMPERATURE_PROPS,
+            SENSIBO_TEMPERATURE_RANGE,
           );
 
     if (that.temp.temperature > coolingThresholdTemperature) {
@@ -479,7 +477,7 @@ function updateDesiredState(that, stateDelta, callback) {
       newState.mode = 'cool';
       newState.targetTemperature = clampTemperature(
         heatingThresholdTemperature,
-        SENSIBO_TEMPERATURE_PROPS,
+        SENSIBO_TEMPERATURE_RANGE,
       );
       newState.on = true;
     } else if (that.temp.temperature < heatingThresholdTemperature) {
@@ -490,7 +488,7 @@ function updateDesiredState(that, stateDelta, callback) {
       newState.mode = 'heat';
       newState.targetTemperature = clampTemperature(
         coolingThresholdTemperature,
-        SENSIBO_TEMPERATURE_PROPS,
+        SENSIBO_TEMPERATURE_RANGE,
       );
       newState.on = true;
     } else if (
