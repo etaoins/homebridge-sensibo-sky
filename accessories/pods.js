@@ -58,8 +58,11 @@ function SensiboPodAccessory(platform, device) {
   that.state.refreshCycle = device.refreshCycle * 1000 || stateRefreshRate;
   that.temp.temperature = 16; // float
   that.temp.humidity = 0; // int
+
+  that.autoMode = false;
   that.heatingThresholdTemperature = device.defaultTemp;
   that.coolingThresholdTemperature = device.defaultTemp;
+
   // End of initial information
   that.log(
     that.name,
@@ -94,7 +97,6 @@ function SensiboPodAccessory(platform, device) {
 
   // Thermostat Service
   // Current Heating/Cooling Mode characteristic
-
   this.addService(Service.Thermostat);
 
   this.getService(Service.Thermostat)
@@ -148,33 +150,28 @@ function SensiboPodAccessory(platform, device) {
       }
     })
     .on('set', (value, callback) => {
-      that.log(
-        that.name,
-        'State change set, current ACstate:',
-        that.state.mode,
-        ' new state:',
-        value,
-      );
+      that.log(that.name, 'State change set:', value);
 
       switch (value) {
         case Characteristic.TargetHeatingCoolingState.OFF:
           that.state.on = false;
+
+          that.autoMode = false;
           break;
         case Characteristic.TargetHeatingCoolingState.COOL:
           that.state.mode = 'cool';
           that.state.on = true;
+
+          that.autoMode = false;
           break;
         case Characteristic.TargetHeatingCoolingState.HEAT:
           that.state.mode = 'heat';
           that.state.on = true;
+
+          that.autoMode = false;
           break;
         case Characteristic.TargetHeatingCoolingState.AUTO:
-          if (that.state.targetTemperature <= that.temp.temperature) {
-            that.state.mode = 'cool';
-          } else {
-            that.state.mode = 'heat';
-          }
-          that.state.on = true;
+          that.autoMode = true;
           break;
         default:
           that.state.mode = 'cool';
@@ -182,19 +179,7 @@ function SensiboPodAccessory(platform, device) {
           break;
       }
 
-      that.log(
-        that.name,
-        ' - Submit state change: New state: ',
-        that.state.mode,
-        'On/Off Status:',
-        that.state.on,
-      );
-      that.platform.api.submitState(that.deviceid, that.state, (data) => {
-        if (data !== undefined) {
-          logStateChange(that);
-        }
-      });
-      callback();
+      updateDesiredState(that, callback);
     });
 
   // Current Temperature characteristic
@@ -204,101 +189,67 @@ function SensiboPodAccessory(platform, device) {
       callback(null, that.temp.temperature);
     });
 
+  const TEMPERATURE_PROPS = {
+    format: Characteristic.Formats.FLOAT,
+    unit: Characteristic.Units.CELSIUS,
+    maxValue: 30,
+    minValue: 18,
+    minStep: 1,
+    perms: [
+      Characteristic.Perms.READ,
+      Characteristic.Perms.WRITE,
+      Characteristic.Perms.NOTIFY,
+    ],
+  };
+
   // Target Temperature characteristic
   this.getService(Service.Thermostat)
     .getCharacteristic(Characteristic.TargetTemperature)
-    .setProps({
-      format: Characteristic.Formats.FLOAT,
-      unit: Characteristic.Units.CELSIUS,
-      maxValue: 30,
-      minValue: 18,
-      minStep: 1,
-      perms: [
-        Characteristic.Perms.READ,
-        Characteristic.Perms.WRITE,
-        Characteristic.Perms.NOTIFY,
-      ],
-    })
+    .setProps(TEMPERATURE_PROPS)
     .on('get', (callback) => {
       callback(null, that.state.targetTemperature);
     })
 
     .on('set', (value, callback) => {
-      let newTargetTemp = value;
-      // limit temperature to Sensibo standards
-      if (value <= 18.0) {
-        newTargetTemp = 18.0;
-      } else if (value >= 30.0) {
-        newTargetTemp = 30.0;
+      that.log(that.name, ': Setting target temperature: ', value);
+
+      const newTargetTemp = clampTemperature(value);
+      if (newTargetTemp > that.coolingThresholdTemperature) {
+        that.coolingThresholdTemperature = newTargetTemp;
+      }
+      if (newTargetTemp < that.heatingThresholdTemperature) {
+        that.heatingThresholdTemperature = newTargetTemp;
       }
 
-      that.coolingThresholdTemperature = Math.round(that.temp.temperature);
-
-      if (value <= that.coolingThresholdTemperature) {
-        that.state.mode = 'cool';
-      } else if (value > that.coolingThresholdTemperature) {
-        that.state.mode = 'heat';
-      }
-
-      that.state.on = true;
-
-      that.log(
-        '[DEBUG temp] ',
-        that.name,
-        ' Cur Target temp:',
-        that.state.targetTemperature,
-        ' new targetTemp: ',
-        newTargetTemp,
-      );
-
-      if (that.state.targetTemperature !== newTargetTemp) {
-        // only send if it had changed
-        that.state.targetTemperature = newTargetTemp;
-        that.log(
-          that.name,
-          ' Submit new target temperature: ',
-          that.state.targetTemperature,
-        );
-
-        that.platform.api.submitState(that.deviceid, that.state, (data) => {
-          if (data !== undefined) {
-            logStateChange(that);
-          }
-        });
-      }
-      callback();
+      updateDesiredState(that, callback);
     });
 
   // Heating Threshold Temperature Characteristic
   this.getService(Service.Thermostat)
     .getCharacteristic(Characteristic.HeatingThresholdTemperature)
+    .setProps(TEMPERATURE_PROPS)
     .on('get', (callback) => {
       callback(null, that.heatingThresholdTemperature);
     })
     .on('set', (value, callback) => {
       that.log(that.name, ': Setting heating threshold: ', value);
-      that.heatingThresholdTemperature = value;
+      that.heatingThresholdTemperature = clampTemperature(value);
 
-      that
-        .getService(Service.Thermostat)
-        .getCharacteristic(Characteristic.TargetTemperature)
-        .setValue(that.state.targetTemperature, callback);
+      updateDesiredState(that, callback);
     });
 
   // Cooling Threshold Temperature Characteristic
   this.getService(Service.Thermostat)
     .getCharacteristic(Characteristic.CoolingThresholdTemperature)
+    .setProps(TEMPERATURE_PROPS)
     .on('get', (callback) => {
       callback(null, that.coolingThresholdTemperature);
     })
     .on('set', (value, callback) => {
-      that.log(that.name, ': Setting cooling threshold');
-      that.coolingThresholdTemperature = value;
+      that.log(that.name, ': Setting cooling threshold: ', value);
+      that.coolingThresholdTemperature = clampTemperature(value);
 
-      that
-        .getService(Service.Thermostat)
-        .getCharacteristic(Characteristic.TargetTemperature)
-        .setValue(that.state.targetTemperature, callback);
+      updateDesiredState(that, callback);
     });
 
   // Temperature Display Units characteristic
@@ -416,6 +367,16 @@ function convertToCelsius(value) {
   return (value - 32) / 1.8;
 }
 
+function clampTemperature(value) {
+  if (value <= 18.0) {
+    return 18.0;
+  } else if (value >= 30.0) {
+    return 30.0;
+  }
+
+  return value;
+}
+
 function loadData() {
   const that = this;
   this.refreshAll(() => {
@@ -434,6 +395,30 @@ function getServices() {
 
 function identify() {
   this.log('Identify! (name: %s)', this.name);
+}
+
+function updateDesiredState(that, callback) {
+  if (that.autoMode) {
+    if (that.temp.temperature > that.coolingThresholdTemperature) {
+      that.state.mode = 'cool';
+      that.state.targetTemperature = that.coolingThresholdTemperature;
+      that.state.on = true;
+    } else if (that.temp.temperature < that.heatingThresholdTemperature) {
+      that.state.mode = 'heat';
+      that.state.targetTemperature = that.heatingThresholdTemperature;
+      that.state.on = true;
+    } else {
+      that.state.on = false;
+    }
+  }
+
+  that.platform.api.submitState(that.deviceid, that.state, (data) => {
+    if (data !== undefined) {
+      logStateChange(that);
+    }
+
+    callback();
+  });
 }
 
 function logStateChange(that) {
