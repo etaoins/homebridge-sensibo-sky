@@ -61,6 +61,7 @@ function SensiboPodAccessory(platform, device) {
 
   that.autoMode = false;
   that.heatingThresholdTemperature = device.defaultTemp;
+  that.userTargetTemperature = device.defaultTemp;
   that.coolingThresholdTemperature = device.defaultTemp;
 
   // End of initial information
@@ -214,14 +215,7 @@ function SensiboPodAccessory(platform, device) {
 
     .on('set', (value, callback) => {
       that.log(that.name, ': Setting target temperature: ', value);
-
-      const newTargetTemp = clampTemperature(value);
-      if (newTargetTemp > that.coolingThresholdTemperature) {
-        that.coolingThresholdTemperature = newTargetTemp;
-      }
-      if (newTargetTemp < that.heatingThresholdTemperature) {
-        that.heatingThresholdTemperature = newTargetTemp;
-      }
+      that.userTargetTemperature = value;
 
       updateDesiredState(that, callback);
     });
@@ -466,6 +460,8 @@ function updateDesiredState(that, callback) {
     } else {
       newState.on = false;
     }
+  } else {
+    newState.targetTemperature = that.userTargetTemperature;
   }
 
   if (statesEqual(that.state, newState)) {
