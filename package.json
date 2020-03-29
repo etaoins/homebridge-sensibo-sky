@@ -16,5 +16,20 @@
     "node": ">=0.12.0",
     "homebridge": ">=0.3.0"
   },
-  "dependencies": {}
+  "scripts": {
+    "format": "yarn format:eslint && yarn format:prettier",
+    "format:prettier": "prettier --write index.js 'accessories/*.js' 'lib/*.js'",
+    "format:eslint": "eslint --fix index.js 'accessories/*.js' 'lib/*.js'",
+    "lint": "concurrently 'yarn lint:eslint' 'yarn lint:prettier' 'yarn lint:markdown'",
+    "lint:prettier": "prettier --list-different index.js 'accessories/*.js' 'lib/*.js'",
+    "lint:eslint": "eslint index.js 'accessories/*.js' 'lib/*.js'"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "concurrently": "5.1.0",
+    "eslint": "^6.8.0",
+    "eslint-config-seek": "6.0.2",
+    "eslint-plugin-import": "^2.20.2",
+    "prettier": "2.0.2"
+  }
 }

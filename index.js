@@ -1,8 +1,6 @@
-var sensibo = require('./lib/sensiboapi');
-var Service, Characteristic, Accessory, uuid;
-var SensiboPodAccessory;
-
-const timeRefresh = 30000; // refresh state cycle time in ms
+const sensibo = require('./lib/sensiboapi');
+let Service, Characteristic, Accessory, uuid;
+let SensiboPodAccessory;
 
 module.exports = function (homebridge) {
   Service = homebridge.hap.Service;
@@ -26,12 +24,12 @@ module.exports = function (homebridge) {
 
 function SensiboPlatform(log, config) {
   // Load Wink Authentication From Config File
-  this.apiKey = config['apiKey'];
-  this.apiDebug = config['apiDebug'];
-  this.timeLapse = config['timeLapse'];
-  this.hideHumidity = config['hideHumidity'] || false;
-  this.temperatureUnit = config['temperatureUnit'];
-  this.defaultTemp = config['defaultTemp'];
+  this.apiKey = config.apiKey;
+  this.apiDebug = config.apiDebug;
+  this.timeLapse = config.timeLapse;
+  this.hideHumidity = config.hideHumidity || false;
+  this.temperatureUnit = config.temperatureUnit;
+  this.defaultTemp = config.defaultTemp;
   this.api = sensibo;
   this.log = log;
   this.debug = log.debug;
@@ -39,35 +37,28 @@ function SensiboPlatform(log, config) {
 }
 
 SensiboPlatform.prototype = {
-  reloadData: function (callback) {
-    //This is called when we need to refresh all Wink device information.
+  reloadData(_callback) {
+    // This is called when we need to refresh all device information.
     this.debug('Refreshing Sensibo Data');
-    for (var i = 0; i < this.deviceLookup.length; i++) {
+    for (let i = 0; i < this.deviceLookup.length; i++) {
       this.deviceLookup[i].loadData();
     }
   },
-  accessories: function (callback) {
+  accessories(callback) {
     this.log('Fetching Sensibo devices...');
 
-    var that = this;
-    var foundAccessories = [];
+    const that = this;
+    const foundAccessories = [];
     this.deviceLookup = [];
 
-    /*
-		var refreshLoop = function () {
-			setInterval(that.reloadData.bind(that), timeRefresh);
-		};
-		*/
     sensibo.init(this.apiKey, this.debug);
     sensibo.getPods(that.log, function (devices) {
       // success
-      var podTimeLapse = 0;
+      let podTimeLapse = 0;
 
       if (devices != null) {
-        for (var i = 0; i < devices.length; i++) {
-          var device = devices[i];
-
-          var accessory = undefined;
+        for (let i = 0; i < devices.length; i++) {
+          const device = devices[i];
 
           device.refreshCycle = that.timeLapse + podTimeLapse;
           device.hideHumidity = that.hideHumidity || false;
@@ -75,9 +66,9 @@ SensiboPlatform.prototype = {
           device.defaultTemp = that.defaultTemp;
 
           podTimeLapse += 0.5;
-          accessory = new SensiboPodAccessory(that, device);
+          const accessory = new SensiboPodAccessory(that, device);
 
-          if (accessory != undefined) {
+          if (accessory !== undefined) {
             that.log(
               'Device Added (Name: %s, ID: %s, Group: %s)',
               accessory.name,
@@ -94,7 +85,7 @@ SensiboPlatform.prototype = {
           'No senisbo devices return from Sensibo server ! Please check your APIkey.',
         );
       }
-      //refreshLoop();
+      // refreshLoop();
     });
   },
 };
