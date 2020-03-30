@@ -1,5 +1,14 @@
 const { inherits } = require('util');
 
+const { calculateDesiredState } = require('../lib/autoMode');
+const { statesEquivalent } = require('../lib/states');
+const {
+  SENSIBO_TEMPERATURE_RANGE,
+  TARGET_TEMPERATURE_RANGE,
+  clampTemperature,
+  convertToCelsius,
+} = require('../lib/temperature');
+
 let Accessory;
 let Service;
 let Characteristic;
@@ -7,20 +16,6 @@ let uuid;
 const stateTimeout = 30000; // in ms to min time elapse to call for refresh
 const tempTimeout = 10000; // in ms to min time elapse before next call for refresh
 const stateRefreshRate = 30000; // Interval for status update
-
-const SENSIBO_TEMPERATURE_RANGE = {
-  // This limited to what Sensibo/AC unit understand
-  minValue: 18,
-  maxValue: 30,
-  minStep: 1,
-};
-
-const TARGET_TEMPERATURE_RANGE = {
-  // This is virtual so we can accept more values
-  minValue: 16,
-  maxValue: 30,
-  minStep: 0.5,
-};
 
 /*
  *   Pod Accessory
@@ -418,20 +413,6 @@ function refreshAll(callback) {
   });
 }
 
-function convertToCelsius(value) {
-  return (value - 32) / 1.8;
-}
-
-function clampTemperature(value, props) {
-  if (value <= props.minValue) {
-    return props.minValue;
-  } else if (value >= props.maxValue) {
-    return props.maxValue;
-  }
-
-  return props.minStep >= 1.0 ? Math.round(value) : value;
-}
-
 function loadData() {
   const that = this;
   this.refreshAll(() => {
@@ -452,16 +433,6 @@ function identify() {
   this.log('Identify! (name: %s)', this.name);
 }
 
-function fanLevelForTemperatureDeviation(deviation) {
-  if (deviation > 4.0) {
-    return 'high';
-  } else if (deviation > 1.0) {
-    return 'medium';
-  }
-
-  return 'low';
-}
-
 function updateDesiredState(that, stateDelta, callback) {
   const {
     heatingThresholdTemperature,
@@ -469,7 +440,7 @@ function updateDesiredState(that, stateDelta, callback) {
     coolingThresholdTemperature,
   } = that;
 
-  const newState = {
+  let newState = {
     ...that.state,
     ...stateDelta,
   };
@@ -481,64 +452,16 @@ function updateDesiredState(that, stateDelta, callback) {
     typeof coolingThresholdTemperature === 'number' &&
     typeof heatingThresholdTemperature === 'number'
   ) {
-    that.log(
-      'Calculating desired state (roomTemp: %s, mode: %s, heatingThresh %s, userTarget: %s, coolingThresh: %s)',
-      that.temp.temperature,
-      that.state.on ? that.state.mode : 'off',
-      heatingThresholdTemperature,
-      userTargetTemperature,
-      coolingThresholdTemperature,
-    );
-
-    const targetTemperature =
-      typeof userTargetTemperature === 'number'
-        ? userTargetTemperature
-        : clampTemperature(
-            heatingThresholdTemperature + coolingThresholdTemperature,
-            SENSIBO_TEMPERATURE_RANGE,
-          );
-
-    if (that.temp.temperature > coolingThresholdTemperature) {
-      if (that.state.mode !== 'cool' || that.state.on !== true) {
-        that.log('Hotter than cooling threshold, switching to cool mode');
-      }
-
-      newState.mode = 'cool';
-      newState.fanLevel = fanLevelForTemperatureDeviation(
-        that.temp.temperature - coolingThresholdTemperature,
-      );
-
-      newState.targetTemperature = clampTemperature(
+    newState = calculateDesiredState(
+      that.log.bind(that),
+      {
+        roomTemperature: that.temp.temperature,
         heatingThresholdTemperature,
-        SENSIBO_TEMPERATURE_RANGE,
-      );
-      newState.on = true;
-    } else if (that.temp.temperature < heatingThresholdTemperature) {
-      if (that.state.mode !== 'heat' || that.state.on !== true) {
-        that.log('Colder than heating threshold, switching to hot mode');
-      }
-
-      newState.mode = 'heat';
-      newState.fanLevel = fanLevelForTemperatureDeviation(
-        heatingThresholdTemperature - that.temp.temperature,
-      );
-
-      newState.targetTemperature = clampTemperature(
+        userTargetTemperature,
         coolingThresholdTemperature,
-        SENSIBO_TEMPERATURE_RANGE,
-      );
-      newState.on = true;
-    } else if (
-      (that.state.mode === 'heat' &&
-        that.temp.temperature > targetTemperature) ||
-      (that.state.mode === 'cool' && that.temp.temperature < targetTemperature)
-    ) {
-      if (that.state.on === true) {
-        that.log('Crossed temperature threshold, switching off');
-      }
-
-      newState.on = false;
-    }
+      },
+      newState,
+    );
   } else if (typeof userTargetTemperature === 'number') {
     newState.fanLevel = 'auto';
     newState.targetTemperature = userTargetTemperature;
@@ -561,20 +484,6 @@ function updateDesiredState(that, stateDelta, callback) {
       callback();
     }
   });
-}
-
-function statesEquivalent(left, right) {
-  if (left.on === false && right.on === false) {
-    // If both states are off the other values don't matter
-    return true;
-  }
-
-  return (
-    left.mode === right.mode &&
-    left.targetTemperature === right.targetTemperature &&
-    left.on === right.on &&
-    left.fanLevel === right.fanLevel
-  );
 }
 
 function logStateChange(that) {
