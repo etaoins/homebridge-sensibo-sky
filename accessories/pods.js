@@ -73,6 +73,7 @@ function SensiboPodAccessory(platform, device) {
   that.temp.temperature = 20; // float
   that.temp.humidity = 0; // int
 
+  that.masterSwitch = true;
   that.autoMode = false;
   that.heatingThresholdTemperature = undefined;
   that.userTargetTemperature = undefined;
@@ -100,30 +101,51 @@ function SensiboPodAccessory(platform, device) {
     `Pod ID: ${that.deviceid}`,
   );
 
+  // Master switch
+  this.addService(Service.Switch, 'Split Unit', 'Power')
+    .getCharacteristic(Characteristic.On)
+    .on('get', (callback) => {
+      // Either in auto mode or manually on
+      callback(null, that.masterSwitch && (that.state.on || that.autoMode));
+    })
+    .on('set', (value, callback) => {
+      if (value === that.masterSwitch) {
+        callback();
+        return;
+      }
+
+      if (value) {
+        that.log('Turning master switch on');
+
+        that.masterSwitch = true;
+        updateDesiredState(that, that.autoMode ? {} : { on: true }, callback);
+      } else {
+        that.log('Turning master switch off');
+
+        that.masterSwitch = false;
+        updateDesiredState(that, { on: false }, callback);
+      }
+    });
+
   // Thermostat Service
-  // Current Heating/Cooling Mode characteristic
   const thermostatService = this.addService(Service.Thermostat);
 
+  // Current Heating/Cooling Mode characteristic
   thermostatService
     .getCharacteristic(Characteristic.CurrentHeatingCoolingState)
     .on('get', (callback) => {
-      if (that.autoMode) {
-        callback(null, Characteristic.CurrentHeatingCoolingState.AUTO);
-      } else if (that.state.on === false) {
+      if (that.state.on === false) {
         callback(null, Characteristic.CurrentHeatingCoolingState.OFF);
       } else {
         switch (that.state.mode) {
-          case 'cool': // HomeKit only accepts HEAT/COOL/OFF, so we have to determine if we are Heating, Cooling or OFF.
+          case 'cool':
             callback(null, Characteristic.CurrentHeatingCoolingState.COOL);
             break;
           case 'heat':
             callback(null, Characteristic.CurrentHeatingCoolingState.HEAT);
             break;
           case 'fan':
-            callback(null, Characteristic.CurrentHeatingCoolingState.COOL);
-            break;
           default:
-            // anything else then we'll report the thermostat as off.
             callback(null, Characteristic.CurrentHeatingCoolingState.OFF);
             break;
         }
@@ -135,22 +157,17 @@ function SensiboPodAccessory(platform, device) {
     .getCharacteristic(Characteristic.TargetHeatingCoolingState)
     .on('get', (callback) => {
       if (that.autoMode) {
-        callback(null, Characteristic.TargetHeatingCoolingState.AUTO);
-      } else if (that.state.on === false) {
-        callback(null, Characteristic.TargetHeatingCoolingState.OFF);
+        callback(null, Characteristic.CurrentHeatingCoolingState.AUTO);
       } else {
         switch (that.state.mode) {
-          case 'cool': // HomeKit only accepts HEAT/COOL/OFF, so we have to determine if we are Heating, Cooling or OFF.
+          case 'cool':
             callback(null, Characteristic.TargetHeatingCoolingState.COOL);
             break;
           case 'heat':
             callback(null, Characteristic.TargetHeatingCoolingState.HEAT);
             break;
-          case 'fan':
-            callback(null, Characteristic.TargetHeatingCoolingState.AUTO);
-            break;
           default:
-            // anything else then we'll report the thermostat as off.
+          case 'fan':
             callback(null, Characteristic.TargetHeatingCoolingState.OFF);
             break;
         }
@@ -159,19 +176,19 @@ function SensiboPodAccessory(platform, device) {
     .on('set', (value, callback) => {
       switch (value) {
         case Characteristic.TargetHeatingCoolingState.COOL:
-          that.log('Setting target mode to cool');
+          that.log('Setting target heating mode to cool');
           that.autoMode = false;
           updateDesiredState(that, { on: true, mode: 'cool' }, callback);
 
           break;
         case Characteristic.TargetHeatingCoolingState.HEAT:
-          that.log('Setting target mode to heat');
+          that.log('Setting target heating mode to heat');
           that.autoMode = false;
           updateDesiredState(that, { on: true, mode: 'heat' }, callback);
 
           break;
         case Characteristic.TargetHeatingCoolingState.AUTO:
-          that.log('Setting target mode to auto');
+          that.log('Setting target heating mode to auto');
           that.autoMode = true;
           updateDesiredState(that, {}, callback);
 
@@ -179,9 +196,9 @@ function SensiboPodAccessory(platform, device) {
 
         case Characteristic.TargetHeatingCoolingState.OFF:
         default:
-          that.log('Setting target mode to off');
+          that.log('Setting target heating mode to off');
           that.autoMode = false;
-          updateDesiredState(that, { on: false }, callback);
+          updateDesiredState(that, { mode: 'fan' }, callback);
 
           break;
       }
@@ -457,7 +474,9 @@ function updateDesiredState(that, stateDelta, callback) {
     ...stateDelta,
   };
 
-  if (
+  if (that.masterSwitch === false) {
+    newState.on = false;
+  } else if (
     that.autoMode &&
     typeof coolingThresholdTemperature === 'number' &&
     typeof heatingThresholdTemperature === 'number'
