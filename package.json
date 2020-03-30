@@ -23,7 +23,7 @@
     "lint": "concurrently 'yarn lint:eslint' 'yarn lint:prettier'",
     "lint:prettier": "prettier --list-different index.js 'accessories/*.js' 'lib/*.js'",
     "lint:eslint": "eslint index.js 'accessories/*.js' 'lib/*.js'",
-    "test": "jest"
+    "test": "jest --collectCoverage"
   },
   "dependencies": {},
   "devDependencies": {
