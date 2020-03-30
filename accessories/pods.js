@@ -22,8 +22,6 @@ const TARGET_TEMPERATURE_RANGE = {
   minStep: 0.5,
 };
 
-const MEDIUM_FAN_THRESHOLD = 1.0;
-
 /*
  *   Pod Accessory
  */
@@ -437,6 +435,16 @@ function identify() {
   this.log('Identify! (name: %s)', this.name);
 }
 
+function fanLevelForTemperatureDeviation(deviation) {
+  if (deviation > 4.0) {
+    return 'high';
+  } else if (deviation > 1.0) {
+    return 'medium';
+  }
+
+  return 'low';
+}
+
 function updateDesiredState(that, stateDelta, callback) {
   const {
     heatingThresholdTemperature,
@@ -477,11 +485,9 @@ function updateDesiredState(that, stateDelta, callback) {
       }
 
       newState.mode = 'cool';
-      newState.fanLevel =
-        that.temp.temperature - coolingThresholdTemperature >
-        MEDIUM_FAN_THRESHOLD
-          ? 'medium'
-          : 'low';
+      newState.fanLevel = fanLevelForTemperatureDeviation(
+        that.temp.temperature - coolingThresholdTemperature,
+      );
 
       newState.targetTemperature = clampTemperature(
         heatingThresholdTemperature,
@@ -494,11 +500,9 @@ function updateDesiredState(that, stateDelta, callback) {
       }
 
       newState.mode = 'heat';
-      newState.fanLevel =
-        heatingThresholdTemperature - that.temp.temperature >
-        MEDIUM_FAN_THRESHOLD
-          ? 'medium'
-          : 'low';
+      newState.fanLevel = fanLevelForTemperatureDeviation(
+        heatingThresholdTemperature - that.temp.temperature,
+      );
 
       newState.targetTemperature = clampTemperature(
         coolingThresholdTemperature,
