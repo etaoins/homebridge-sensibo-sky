@@ -452,15 +452,6 @@ function updateDesiredState(that, stateDelta, callback) {
     coolingThresholdTemperature,
   } = that;
 
-  that.log(
-    'Calculating desired state: autoMode: %s, roomTemp: %s, heatingThreshold: %s, userTarget: %s, coolingThreshold: %s',
-    that.autoMode,
-    that.temp.temperature,
-    heatingThresholdTemperature,
-    userTargetTemperature,
-    coolingThresholdTemperature,
-  );
-
   const newState = {
     ...that.state,
     ...stateDelta,
@@ -471,6 +462,15 @@ function updateDesiredState(that, stateDelta, callback) {
     typeof coolingThresholdTemperature === 'number' &&
     typeof heatingThresholdTemperature === 'number'
   ) {
+    that.log(
+      'Calculating desired state (roomTemp: %s, mode: %s, heatingThresh %s, userTarget: %s, coolingThresh: %s)',
+      that.temp.temperature,
+      that.state.on ? that.state.mode : 'off',
+      heatingThresholdTemperature,
+      userTargetTemperature,
+      coolingThresholdTemperature,
+    );
+
     const targetTemperature =
       typeof userTargetTemperature === 'number'
         ? userTargetTemperature
@@ -560,10 +560,9 @@ function statesEquivalent(left, right) {
 
 function logStateChange(that) {
   that.log(
-    'Changed status (roomTemp: %s, on: %s, mode: %s, targetTemp: %s, speed: %s)',
+    'Changed status (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
     that.temp.temperature,
-    that.state.on,
-    that.state.mode,
+    that.state.on ? that.state.mode : 'off',
     that.state.targetTemperature,
     that.state.fanLevel,
   );
