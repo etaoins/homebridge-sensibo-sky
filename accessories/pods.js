@@ -22,6 +22,8 @@ const TARGET_TEMPERATURE_RANGE = {
   minStep: 0.5,
 };
 
+const MEDIUM_FAN_THRESHOLD = 1.0;
+
 /*
  *   Pod Accessory
  */
@@ -475,6 +477,12 @@ function updateDesiredState(that, stateDelta, callback) {
       }
 
       newState.mode = 'cool';
+      newState.fanLevel =
+        that.temp.temperature - coolingThresholdTemperature >
+        MEDIUM_FAN_THRESHOLD
+          ? 'medium'
+          : 'low';
+
       newState.targetTemperature = clampTemperature(
         heatingThresholdTemperature,
         SENSIBO_TEMPERATURE_RANGE,
@@ -486,6 +494,12 @@ function updateDesiredState(that, stateDelta, callback) {
       }
 
       newState.mode = 'heat';
+      newState.fanLevel =
+        heatingThresholdTemperature - that.temp.temperature >
+        MEDIUM_FAN_THRESHOLD
+          ? 'medium'
+          : 'low';
+
       newState.targetTemperature = clampTemperature(
         coolingThresholdTemperature,
         SENSIBO_TEMPERATURE_RANGE,
@@ -503,6 +517,7 @@ function updateDesiredState(that, stateDelta, callback) {
       newState.on = false;
     }
   } else if (typeof userTargetTemperature === 'number') {
+    newState.fanLevel = 'auto';
     newState.targetTemperature = userTargetTemperature;
   }
 
@@ -534,7 +549,8 @@ function statesEquivalent(left, right) {
   return (
     left.mode === right.mode &&
     left.targetTemperature === right.targetTemperature &&
-    left.on === right.on
+    left.on === right.on &&
+    left.fanLevel === right.fanLevel
   );
 }
 
