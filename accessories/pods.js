@@ -560,8 +560,7 @@ function statesEquivalent(left, right) {
 
 function logStateChange(that) {
   that.log(
-    'Changed status (name: %s, roomTemp: %s, on: %s, mode: %s, targetTemp: %s, speed: %s)',
-    that.name,
+    'Changed status (roomTemp: %s, on: %s, mode: %s, targetTemp: %s, speed: %s)',
     that.temp.temperature,
     that.state.on,
     that.state.mode,
