@@ -64,11 +64,13 @@ function SensiboPodAccessory(platform, device) {
     humidity: 0, // int
   };
 
-  that.masterSwitch = true;
-  that.autoMode = false;
-  that.heatingThresholdTemperature = undefined;
-  that.userTargetTemperature = undefined;
-  that.coolingThresholdTemperature = undefined;
+  that.userState = {
+    masterSwitch: true,
+    autoMode: false,
+    heatingThresholdTemperature: undefined,
+    targetTemperature: undefined,
+    coolingThresholdTemperature: undefined,
+  };
 
   // AccessoryInformation characteristic
   // Manufacturer characteristic
@@ -93,7 +95,7 @@ function SensiboPodAccessory(platform, device) {
   this.addService(Service.Switch, 'Split Unit', 'Power')
     .getCharacteristic(Characteristic.On)
     .on('set', (value, callback) => {
-      if (value === that.masterSwitch) {
+      if (value === that.userState.masterSwitch) {
         callback();
         return;
       }
@@ -101,13 +103,17 @@ function SensiboPodAccessory(platform, device) {
       if (value) {
         that.log('Turning master switch on');
 
-        that.masterSwitch = true;
-        updateDesiredState(that, that.autoMode ? {} : { on: true }, callback);
+        that.userState.masterSwitch = true;
+        updateAcState(
+          that,
+          that.userState.autoMode ? {} : { on: true },
+          callback,
+        );
       } else {
         that.log('Turning master switch off');
 
-        that.masterSwitch = false;
-        updateDesiredState(that, { on: false }, callback);
+        that.userState.masterSwitch = false;
+        updateAcState(that, { on: false }, callback);
       }
     });
 
@@ -131,28 +137,28 @@ function SensiboPodAccessory(platform, device) {
         case Characteristic.TargetHeatingCoolingState.COOL:
           that.log('Setting target heating mode to cool');
 
-          that.autoMode = false;
+          that.userState.autoMode = false;
           updateCharacteristicsForManualMode(that, that.acState);
 
-          updateDesiredState(that, { on: true, mode: 'cool' }, callback);
+          updateAcState(that, { on: true, mode: 'cool' }, callback);
 
           break;
         case Characteristic.TargetHeatingCoolingState.HEAT:
           that.log('Setting target heating mode to heat');
 
-          that.autoMode = false;
+          that.userState.autoMode = false;
           updateCharacteristicsForManualMode(that, that.acState);
 
-          updateDesiredState(that, { on: true, mode: 'heat' }, callback);
+          updateAcState(that, { on: true, mode: 'heat' }, callback);
 
           break;
         case Characteristic.TargetHeatingCoolingState.AUTO:
           that.log('Setting target heating mode to auto');
 
-          that.autoMode = true;
+          that.userState.autoMode = true;
           updateCharacteristicsForAutoMode(that, that.acState);
 
-          updateDesiredState(that, {}, callback);
+          updateAcState(that, {}, callback);
 
           break;
 
@@ -160,10 +166,10 @@ function SensiboPodAccessory(platform, device) {
         default:
           that.log('Setting target heating mode to off');
 
-          that.autoMode = false;
+          that.userState.autoMode = false;
           updateCharacteristicsForManualMode(that, that.acState);
 
-          updateDesiredState(that, { mode: 'fan' }, callback);
+          updateAcState(that, { mode: 'fan' }, callback);
 
           break;
       }
@@ -185,12 +191,12 @@ function SensiboPodAccessory(platform, device) {
     .setProps({ ...commonTemperatureProps, ...SENSIBO_TEMPERATURE_RANGE })
     .on('set', (value, callback) => {
       that.log(`Setting target temperature: ${value}`);
-      that.userTargetTemperature = clampTemperature(
+      that.userState.targetTemperature = clampTemperature(
         value,
         SENSIBO_TEMPERATURE_RANGE,
       );
 
-      updateDesiredState(that, {}, callback);
+      updateAcState(that, {}, callback);
     });
 
   // Heating Threshold Temperature Characteristic
@@ -200,12 +206,12 @@ function SensiboPodAccessory(platform, device) {
     .updateValue(TARGET_TEMPERATURE_RANGE.minValue)
     .on('set', (value, callback) => {
       that.log(`Setting heating threshold: ${value}`);
-      that.heatingThresholdTemperature = clampTemperature(
+      that.userState.heatingThresholdTemperature = clampTemperature(
         value,
         TARGET_TEMPERATURE_RANGE,
       );
 
-      updateDesiredState(that, {}, callback);
+      updateAcState(that, {}, callback);
     });
 
   // Cooling Threshold Temperature Characteristic
@@ -215,12 +221,12 @@ function SensiboPodAccessory(platform, device) {
     .updateValue(TARGET_TEMPERATURE_RANGE.maxValue)
     .on('set', (value, callback) => {
       that.log(`Setting cooling threshold: ${value}`);
-      that.coolingThresholdTemperature = clampTemperature(
+      that.userState.coolingThresholdTemperature = clampTemperature(
         value,
         TARGET_TEMPERATURE_RANGE,
       );
 
-      updateDesiredState(that, {}, callback);
+      updateAcState(that, {}, callback);
     });
 
   // Humidity sensor service
@@ -305,8 +311,8 @@ function applyServerState(that, acState) {
   that.acState.fanLevel = acState.fanLevel;
   that.acState.updatetime = new Date(); // Set our last update time.
 
-  if (!that.autoMode) {
-    that.userTargetTemperature = that.acState.targetTemperature;
+  if (!that.userState.autoMode) {
+    that.userState.targetTemperature = that.acState.targetTemperature;
   }
 
   updateCharacteristicsFromAcState(that, acState);
@@ -332,7 +338,7 @@ function updateCharacteristicsForAutoMode(that) {
   const masterSwitchService = that.getService(Service.Switch);
   masterSwitchService.updateCharacteristic(
     Characteristic.On,
-    that.masterSwitch,
+    that.userState.masterSwitch,
   );
 
   const thermostatService = that.getService(Service.Thermostat);
@@ -344,7 +350,7 @@ function updateCharacteristicsForAutoMode(that) {
 
   thermostatService.updateCharacteristic(
     Characteristic.TargetTemperature,
-    that.userTargetTemperature,
+    that.userState.targetTemperature,
   );
 }
 
@@ -352,7 +358,7 @@ function updateCharacteristicsForManualMode(that, acState) {
   const masterSwitchService = that.getService(Service.Switch);
   masterSwitchService.updateCharacteristic(
     Characteristic.On,
-    that.masterSwitch && acState.on,
+    that.userState.masterSwitch && acState.on,
   );
 
   const thermostatService = that.getService(Service.Thermostat);
@@ -391,7 +397,7 @@ function updateCharacteristicsFromAcState(that, acState) {
       : Characteristic.TemperatureDisplayUnits.CELSIUS,
   );
 
-  if (that.autoMode) {
+  if (that.userState.autoMode) {
     updateCharacteristicsForAutoMode(that, acState);
   } else {
     updateCharacteristicsForManualMode(that, acState);
@@ -446,7 +452,7 @@ function refreshTemperature(callback) {
 function loadData(callback) {
   const that = this;
   this.refreshState(() =>
-    that.refreshTemperature(() => updateDesiredState(that, {}, callback)),
+    that.refreshTemperature(() => updateAcState(that, {}, callback)),
   );
 }
 
@@ -458,26 +464,26 @@ function identify() {
   this.log('Identify! (name: %s)', this.name);
 }
 
-function updateDesiredState(that, stateDelta, callback) {
+function updateAcState(that, stateDelta, callback) {
   const {
     heatingThresholdTemperature,
     userTargetTemperature,
     coolingThresholdTemperature,
   } = that;
 
-  let newState = {
+  let newAcState = {
     ...that.acState,
     ...stateDelta,
   };
 
-  if (that.masterSwitch === false) {
-    newState.on = false;
+  if (that.userState.masterSwitch === false) {
+    newAcState.on = false;
   } else if (
-    that.autoMode &&
+    that.userState.autoMode &&
     typeof coolingThresholdTemperature === 'number' &&
     typeof heatingThresholdTemperature === 'number'
   ) {
-    newState = calculateDesiredState(
+    newAcState = calculateDesiredState(
       that.log.bind(that),
       {
         roomTemperature: that.temp.temperature,
@@ -485,21 +491,21 @@ function updateDesiredState(that, stateDelta, callback) {
         userTargetTemperature,
         coolingThresholdTemperature,
       },
-      newState,
+      newAcState,
     );
   } else if (typeof userTargetTemperature === 'number') {
-    newState.fanLevel = 'auto';
-    newState.targetTemperature = userTargetTemperature;
+    newAcState.fanLevel = 'auto';
+    newAcState.targetTemperature = userTargetTemperature;
   }
 
-  if (statesEquivalent(that.acState, newState)) {
+  if (statesEquivalent(that.acState, newAcState)) {
     if (callback) {
       callback();
     }
     return;
   }
 
-  that.acState = newState;
+  that.acState = newAcState;
   that.platform.api.submitState(that.deviceid, that.acState, (data) => {
     if (data && data.result && data.result.status === 'Success') {
       const { acState } = data.result;
