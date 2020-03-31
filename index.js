@@ -1,19 +1,8 @@
 const sensibo = require('./lib/sensiboapi');
-let Service, Characteristic, Accessory, uuid;
 let SensiboPodAccessory;
 
 module.exports = function (homebridge) {
-  Service = homebridge.hap.Service;
-  Characteristic = homebridge.hap.Characteristic;
-  Accessory = homebridge.hap.Accessory;
-  uuid = homebridge.hap.uuid;
-
-  SensiboPodAccessory = require('./accessories/pods')(
-    Accessory,
-    Service,
-    Characteristic,
-    uuid,
-  );
+  SensiboPodAccessory = require('./accessories/pods')(homebridge.hap);
 
   homebridge.registerPlatform(
     'homebridge-sensibo-sky',
