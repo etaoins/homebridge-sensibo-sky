@@ -6,7 +6,7 @@ const {
   SENSIBO_TEMPERATURE_RANGE,
   TARGET_TEMPERATURE_RANGE,
   clampTemperature,
-  convertToCelsius,
+  fahrenheitToCelsius,
 } = require('../lib/temperature');
 
 let Accessory;
@@ -321,7 +321,7 @@ function refreshState(callback) {
 
       const newTargetTemperature =
         that.state.temperatureUnit === 'F'
-          ? convertToCelsius(acState.targetTemperature)
+          ? fahrenheitToCelsius(acState.targetTemperature)
           : acState.targetTemperature;
 
       if (that.state.on !== acState.on) {

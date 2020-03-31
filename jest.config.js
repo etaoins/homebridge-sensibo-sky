@@ -1,5 +1,9 @@
 module.exports = {
-  collectCoverageFrom: ['lib/autoMode.js'],
+  collectCoverageFrom: [
+    'lib/autoMode.js',
+    'lib/states.js',
+    'lib/temperature.js',
+  ],
   coverageThreshold: {
     global: {
       branches: 100,
