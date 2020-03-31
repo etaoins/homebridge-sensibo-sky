@@ -236,7 +236,7 @@ function refreshState(callback) {
     that.acState.updatetime &&
     rightnow.getTime() - that.acState.updatetime.getTime() < stateTimeout
   ) {
-    if (callback !== undefined) {
+    if (callback) {
       callback();
     }
     return;
@@ -247,61 +247,66 @@ function refreshState(callback) {
 
   // Update the state
   that.platform.api.getState(that.deviceid, (acState) => {
-    if (acState === undefined) {
-      callback();
-      return;
-    }
+    if (acState) {
+      applyServerState(that, acState);
 
-    that.acState.temperatureUnit = acState.temperatureUnit;
-
-    const newTargetTemperature =
-      that.acState.temperatureUnit === 'F'
-        ? fahrenheitToCelsius(acState.targetTemperature)
-        : acState.targetTemperature;
-
-    if (that.acState.on !== acState.on) {
-      if (acState.on) {
-        that.log('Externally turned on');
-        that.acState.on = true;
-      } else {
-        that.log('Externally turned off');
-        that.acState.on = false;
+      if (callback) {
+        callback();
       }
     }
-
-    if (that.acState.targetTemperature !== newTargetTemperature) {
-      if (acState.on) {
-        that.log(
-          'Target temperature externally changed from %s to %s',
-          that.acState.targetTemperature,
-          newTargetTemperature,
-        );
-      }
-
-      that.acState.targetTemperature = newTargetTemperature;
-    }
-
-    if (that.acState.mode !== acState.mode) {
-      if (acState.on) {
-        that.log(
-          'Mode externally changed from %s to %s',
-          that.acState.mode,
-          acState.mode,
-        );
-      }
-
-      that.acState.mode = acState.mode;
-    }
-
-    that.acState.fanLevel = acState.fanLevel;
-    that.acState.updatetime = new Date(); // Set our last update time.
-
-    if (!that.autoMode) {
-      that.userTargetTemperature = that.acState.targetTemperature;
-    }
-
-    updateCharacteristicsFromAcState(that, acState);
   });
+}
+
+function applyServerState(that, acState) {
+  that.acState.temperatureUnit = acState.temperatureUnit;
+
+  const newTargetTemperature =
+    that.acState.temperatureUnit === 'F'
+      ? fahrenheitToCelsius(acState.targetTemperature)
+      : acState.targetTemperature;
+
+  if (that.acState.on !== acState.on) {
+    if (acState.on) {
+      that.log('Externally turned on');
+      that.acState.on = true;
+    } else {
+      that.log('Externally turned off');
+      that.acState.on = false;
+    }
+  }
+
+  if (that.acState.targetTemperature !== newTargetTemperature) {
+    if (acState.on) {
+      that.log(
+        'Target temperature externally changed from %s to %s',
+        that.acState.targetTemperature,
+        newTargetTemperature,
+      );
+    }
+
+    that.acState.targetTemperature = newTargetTemperature;
+  }
+
+  if (that.acState.mode !== acState.mode) {
+    if (acState.on) {
+      that.log(
+        'Mode externally changed from %s to %s',
+        that.acState.mode,
+        acState.mode,
+      );
+    }
+
+    that.acState.mode = acState.mode;
+  }
+
+  that.acState.fanLevel = acState.fanLevel;
+  that.acState.updatetime = new Date(); // Set our last update time.
+
+  if (!that.autoMode) {
+    that.userTargetTemperature = that.acState.targetTemperature;
+  }
+
+  updateCharacteristicsFromAcState(that, acState);
 }
 
 function heatingCoolingStateForAcState(acState, characteristic) {
@@ -399,7 +404,7 @@ function refreshTemperature(callback) {
     that.temp.updatetime &&
     rightnow.getTime() - that.temp.updatetime.getTime() < tempTimeout
   ) {
-    if (callback !== undefined) {
+    if (callback) {
       callback();
     }
     return;
@@ -499,7 +504,7 @@ function updateDesiredState(that, stateDelta, callback) {
       that.acState = acState;
       logStateChange(that);
 
-      updateCharacteristicsFromAcState(that, data.result.acState);
+      applyServerState(that, data.result.acState);
     } else {
       that.log('Error setting state');
     }
