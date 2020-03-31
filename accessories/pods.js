@@ -119,6 +119,7 @@ function SensiboPodAccessory(platform, device) {
     .getCharacteristic(Characteristic.CurrentTemperature)
     .setProps({
       unit: Characteristic.Units.CELSIUS,
+      minStep: 0.1,
       perms: [Characteristic.Perms.READ, Characteristic.Perms.NOTIFY],
     });
 
