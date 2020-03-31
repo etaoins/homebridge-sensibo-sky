@@ -71,9 +71,6 @@ function SensiboPodAccessory(platform, device) {
   that.userTargetTemperature = undefined;
   that.coolingThresholdTemperature = undefined;
 
-  this.loadData();
-  setInterval(this.loadData.bind(this), that.state.refreshCycle);
-
   // AccessoryInformation characteristic
   // Manufacturer characteristic
   this.getService(Service.AccessoryInformation).setCharacteristic(
@@ -196,13 +193,6 @@ function SensiboPodAccessory(platform, device) {
       }
     });
 
-  // Current Temperature characteristic
-  thermostatService
-    .getCharacteristic(Characteristic.CurrentTemperature)
-    .on('get', (callback) => {
-      callback(null, that.temp.temperature);
-    });
-
   const commonTemperatureProps = {
     format: Characteristic.Formats.FLOAT,
     unit: Characteristic.Units.CELSIUS,
@@ -220,7 +210,6 @@ function SensiboPodAccessory(platform, device) {
     .on('get', (callback) => {
       callback(null, that.state.targetTemperature);
     })
-
     .on('set', (value, callback) => {
       that.log(`Setting target temperature: ${value}`);
       that.userTargetTemperature = clampTemperature(
@@ -276,13 +265,11 @@ function SensiboPodAccessory(platform, device) {
       }
     });
 
-  // Relative Humidity Service
-  // Current Relative Humidity characteristic
-  this.addService(Service.HumiditySensor)
-    .getCharacteristic(Characteristic.CurrentRelativeHumidity)
-    .on('get', (callback) => {
-      callback(null, Math.round(that.temp.humidity)); // int value
-    });
+  // Humidity sensor service
+  this.addService(Service.HumiditySensor);
+
+  this.loadData();
+  setInterval(this.loadData.bind(this), that.state.refreshCycle);
 }
 
 function refreshState(callback) {
@@ -385,7 +372,21 @@ function refreshTemperature(callback) {
     data = myData;
     if (data !== undefined) {
       that.temp.temperature = data[0].temperature;
+      that
+        .getService(Service.Thermostat)
+        .updateCharacteristic(
+          Characteristic.CurrentTemperature,
+          that.temp.temperature,
+        );
+
       that.temp.humidity = data[0].humidity;
+      that
+        .getService(Service.HumiditySensor)
+        .updateCharacteristic(
+          Characteristic.CurrentRelativeHumidity,
+          Math.round(that.temp.humidity),
+        );
+
       that.temp.updatetime = new Date(); // Set our last update time.
     }
     if (callback) {
