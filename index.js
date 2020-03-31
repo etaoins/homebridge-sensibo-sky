@@ -26,8 +26,6 @@ function SensiboPlatform(log, config) {
   // Load Wink Authentication From Config File
   this.apiKey = config.apiKey;
   this.apiDebug = config.apiDebug;
-  this.timeLapse = config.timeLapse;
-  this.hideHumidity = config.hideHumidity || false;
   this.temperatureUnit = config.temperatureUnit;
   this.api = sensibo;
   this.log = log;
@@ -53,17 +51,13 @@ SensiboPlatform.prototype = {
     sensibo.init(this.apiKey, this.debug);
     sensibo.getPods(that.log, function (devices) {
       // success
-      let podTimeLapse = 0;
 
       if (devices != null) {
         for (let i = 0; i < devices.length; i++) {
           const device = devices[i];
 
-          device.refreshCycle = that.timeLapse + podTimeLapse;
-          device.hideHumidity = that.hideHumidity || false;
           device.temperatureUnit = that.temperatureUnit;
 
-          podTimeLapse += 0.5;
           const accessory = new SensiboPodAccessory(that, device);
 
           if (accessory !== undefined) {
