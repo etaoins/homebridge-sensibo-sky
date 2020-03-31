@@ -67,7 +67,7 @@ const sensibo = {
     this.apiKey = inKey;
   },
 
-  getPods(log, callback) {
+  getPods(callback) {
     get(
       { path: `users/me/pods?fields=id,room&apiKey=${this.apiKey}` },
       function (data) {

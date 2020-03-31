@@ -37,8 +37,8 @@ SensiboPlatform.prototype = {
     const foundAccessories = [];
     this.deviceLookup = [];
 
-    sensibo.init(this.apiKey, this.debug);
-    sensibo.getPods(that.log, function (devices) {
+    sensibo.init(this.apiKey);
+    sensibo.getPods((devices) => {
       // success
 
       if (devices != null) {

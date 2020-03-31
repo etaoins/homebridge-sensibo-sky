@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "commonjs",
+    "allowJs": true,
+    "checkJs": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "removeComments": false /* Do not emit comments to output. */,
+
+    "strict": false /* Enable all strict type-checking options. */,
+    "noImplicitAny": false /* Raise error on expressions and declarations with an implied 'any' type. */,
+    "strictBindCallApply": false /* Enable stricter checking of of the bind, call, and apply methods on functions. */,
+    "strictNullChecks": false /* Enable strict null checks. */,
+    "strictFunctionTypes": false /* Enable strict checking of function types. */,
+    "strictPropertyInitialization": false /* Enable strict checking of property initialization in classes. */,
+    "noImplicitThis": false /* Raise error on 'this' expressions with an implied 'any' type. */,
+    "alwaysStrict": false /* Parse in strict mode and emit "use strict" for each source file. */,
+
+    "noUnusedLocals": true /* Report errors on unused locals. */,
+    "noUnusedParameters": true /* Report errors on unused parameters. */,
+    "noImplicitReturns": true /* Report error when not all code paths in function return a value. */,
+    "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */,
+
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "sourceMap": true /* Generates corresponding '.map' file. */,
+
+    "listEmittedFiles": true /* Enable to list all emitted files.  */,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"]
+}

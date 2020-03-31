@@ -2,6 +2,11 @@
   "name": "homebridge-sensibo-sky",
   "description": "HomeBridge plugin for Sensibo Sky",
   "version": "0.4.2",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/wailuen/homebridge-sensibo-sky.git"
@@ -17,21 +22,27 @@
     "homebridge": ">=0.3.0"
   },
   "scripts": {
+    "build": "tsc",
+    "prepack": "yarn build",
+    "prepublish": "yarn build",
     "format": "yarn format:eslint && yarn format:prettier",
-    "format:prettier": "prettier --write index.js 'accessories/*.js' 'lib/*.js'",
-    "format:eslint": "eslint --fix index.js 'accessories/*.js' 'lib/*.js'",
+    "format:prettier": "prettier --write 'src/**/*.ts' 'src/**/*.js'",
+    "format:eslint": "eslint --fix 'src/**/*.ts' 'src/**/*.js'",
     "lint": "concurrently 'yarn lint:eslint' 'yarn lint:prettier'",
-    "lint:prettier": "prettier --list-different index.js 'accessories/*.js' 'lib/*.js'",
-    "lint:eslint": "eslint index.js 'accessories/*.js' 'lib/*.js'",
+    "lint:prettier": "prettier --list-different 'src/**/*.ts' 'src/**/*.js'",
+    "lint:eslint": "eslint 'src/**/*.ts' 'src/**/*.js'",
     "test": "jest --collectCoverage"
   },
   "dependencies": {},
   "devDependencies": {
+    "@types/jest": "^25.1.4",
+    "@types/node": "^13.9.8",
     "concurrently": "^5.1.0",
     "eslint": "^6.8.0",
     "eslint-config-seek": "^6.0.2",
     "eslint-plugin-import": "^2.20.2",
     "jest": "^25.2.4",
-    "prettier": "^2.0.2"
+    "prettier": "^2.0.2",
+    "typescript": "^3.8.3"
   }
 }
