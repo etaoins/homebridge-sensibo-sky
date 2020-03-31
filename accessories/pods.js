@@ -197,6 +197,7 @@ function SensiboPodAccessory(platform, device) {
   thermostatService
     .getCharacteristic(Characteristic.HeatingThresholdTemperature)
     .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
+    .updateValue(TARGET_TEMPERATURE_RANGE.minValue)
     .on('set', (value, callback) => {
       that.log(`Setting heating threshold: ${value}`);
       that.heatingThresholdTemperature = clampTemperature(
@@ -211,6 +212,7 @@ function SensiboPodAccessory(platform, device) {
   thermostatService
     .getCharacteristic(Characteristic.CoolingThresholdTemperature)
     .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
+    .updateValue(TARGET_TEMPERATURE_RANGE.maxValue)
     .on('set', (value, callback) => {
       that.log(`Setting cooling threshold: ${value}`);
       that.coolingThresholdTemperature = clampTemperature(
