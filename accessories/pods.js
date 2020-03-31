@@ -513,11 +513,15 @@ function updateDesiredState(that, stateDelta, callback) {
 }
 
 function logStateChange(that) {
-  that.log(
-    'Changed status (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
-    that.temp.temperature,
-    that.acState.on ? that.acState.mode : 'off',
-    that.acState.targetTemperature,
-    that.acState.fanLevel,
-  );
+  if (that.acState.on) {
+    that.log(
+      'Changed status (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
+      that.temp.temperature,
+      that.acState.mode,
+      that.acState.targetTemperature,
+      that.acState.fanLevel,
+    );
+  } else {
+    that.log('Changed status (roomTemp: %s, mode: off)', that.temp.temperature);
+  }
 }
