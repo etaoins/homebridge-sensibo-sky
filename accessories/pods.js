@@ -17,10 +17,7 @@ const stateTimeout = 30000; // in ms to min time elapse to call for refresh
 const tempTimeout = 10000; // in ms to min time elapse before next call for refresh
 const stateRefreshRate = 30000; // Interval for status update
 
-/*
- *   Pod Accessory
- */
-
+// Pod Accessory
 module.exports = function (oAccessory, oService, oCharacteristic, ouuid) {
   if (oAccessory) {
     Accessory = oAccessory;
