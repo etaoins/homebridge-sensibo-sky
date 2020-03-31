@@ -409,10 +409,8 @@ function refreshTemperature(callback) {
   }
 
   // Update the temperature
-  let data;
-  that.platform.api.getMeasurements(that.deviceid, (myData) => {
-    data = myData;
-    if (data !== undefined) {
+  that.platform.api.getMeasurements(that.deviceid, (data) => {
+    if (data && data.length > 0) {
       that.temp.temperature = data[0].temperature;
       that
         .getService(Service.Thermostat)
