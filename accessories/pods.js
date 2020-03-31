@@ -278,19 +278,11 @@ function SensiboPodAccessory(platform, device) {
 
   // Relative Humidity Service
   // Current Relative Humidity characteristic
-  if (that.state.hideHumidity) {
-    thermostatService
-      .getCharacteristic(Characteristic.CurrentRelativeHumidity)
-      .on('get', (callback) => {
-        callback(null, Math.round(that.temp.humidity)); // int value
-      });
-  } else {
-    this.addService(Service.HumiditySensor)
-      .getCharacteristic(Characteristic.CurrentRelativeHumidity)
-      .on('get', (callback) => {
-        callback(null, Math.round(that.temp.humidity)); // int value
-      });
-  }
+  this.addService(Service.HumiditySensor)
+    .getCharacteristic(Characteristic.CurrentRelativeHumidity)
+    .on('get', (callback) => {
+      callback(null, Math.round(that.temp.humidity)); // int value
+    });
 }
 
 function refreshState(callback) {
