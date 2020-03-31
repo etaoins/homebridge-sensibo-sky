@@ -1,7 +1,7 @@
 const { inherits } = require('util');
 
 const { calculateDesiredState } = require('../lib/autoMode');
-const { statesEquivalent } = require('../lib/states');
+const { statesEquivalent } = require('../lib/acState');
 const {
   SENSIBO_TEMPERATURE_RANGE,
   TARGET_TEMPERATURE_RANGE,
