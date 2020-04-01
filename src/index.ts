@@ -1,21 +1,18 @@
 import sensibo from './lib/sensiboapi';
+import { Config } from './lib/config';
 import createSensiboPodAccessory from './accessories/pods';
 
 let SensiboPodAccessory: any;
 
 class SensiboPlatform {
   apiKey: string;
-  apiDebug: boolean;
-  temperatureUnit: 'C' | 'F';
   api: typeof sensibo;
   log: Function;
   debug: Function;
   deviceLookup: any[];
 
-  constructor(log: any, config: any) {
+  constructor(log: any, config: Config) {
     this.apiKey = config.apiKey;
-    this.apiDebug = config.apiDebug;
-    this.temperatureUnit = config.temperatureUnit;
     this.api = sensibo;
     this.log = log;
     this.debug = log.debug;
@@ -33,8 +30,6 @@ class SensiboPlatform {
       if (devices != null) {
         for (let i = 0; i < devices.length; i++) {
           const device = devices[i];
-
-          device.temperatureUnit = this.temperatureUnit;
 
           const accessory = new SensiboPodAccessory(this, device);
 

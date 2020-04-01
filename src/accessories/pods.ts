@@ -1,5 +1,6 @@
 import { calculateDesiredAcState } from '../lib/autoMode';
 import { acStatesEquivalent, AcState } from '../lib/acState';
+import { Device } from '../lib/device';
 import { Measurement } from '../lib/measurement';
 import { UserState } from '../lib/userState';
 import {
@@ -46,12 +47,13 @@ export default function (hap: any) {
     };
     userState: UserState;
 
-    constructor(platform: any, device: any) {
+    constructor(platform: any, device: Device) {
       const id = uuid.generate(`hbdev:sensibo:pod:${device.id}`);
       super(device.room.name, id);
 
       this.deviceGroup = 'pods';
       this.deviceid = device.id;
+      this.name = device.room.name;
       this.platform = platform;
       this.log = platform.log;
       this.debug = platform.debug;
@@ -59,7 +61,7 @@ export default function (hap: any) {
       // HomeKit does really strange things since we have to wait on the data to get populated
       // This is just intro information. It will be corrected in a couple of seconds.
       this.acState = {
-        temperatureUnit: device.temperatureUnit,
+        temperatureUnit: 'C',
         targetTemperature: 20,
         on: false,
         mode: 'cool',

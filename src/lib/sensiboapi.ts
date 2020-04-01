@@ -2,6 +2,7 @@ import http from 'https';
 
 import { celciusToFahrenheit } from './temperature';
 import { AcState } from './acState';
+import { Device } from './device';
 
 function _http(data: any, callback: (data: any) => void) {
   const options = {
@@ -74,7 +75,7 @@ class Sensibo {
     this.apiKey = inKey;
   }
 
-  getPods(callback: (data: any) => void) {
+  getPods(callback: (devices?: Device[]) => void) {
     get(
       { path: `users/me/pods?fields=id,room&apiKey=${this.apiKey}` },
       function (data) {
