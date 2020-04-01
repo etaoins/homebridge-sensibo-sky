@@ -196,6 +196,7 @@ export default (hap: any) => {
       thermostatService
         .getCharacteristic(Characteristic.HeatingThresholdTemperature)
         .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
+        .setValue(this.userState.heatingThresholdTemperature)
         .on('set', (value: any, callback: () => void) => {
           this.log(`Setting heating threshold: ${value}`);
 
@@ -213,6 +214,7 @@ export default (hap: any) => {
       thermostatService
         .getCharacteristic(Characteristic.CoolingThresholdTemperature)
         .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
+        .setValue(this.userState.coolingThresholdTemperature)
         .on('set', (value: any, callback: () => void) => {
           this.log(`Setting cooling threshold: ${value}`);
 
@@ -228,6 +230,11 @@ export default (hap: any) => {
 
       // Humidity sensor service
       this.addService(Service.HumiditySensor);
+
+      // We don't need to wait for the AC state to do this
+      if (this.userState.autoMode) {
+        this.updateCharacteristicsForAutoMode(this.userState);
+      }
 
       this.pollSensibo();
       global.setInterval(this.pollSensibo.bind(this), 30000);
