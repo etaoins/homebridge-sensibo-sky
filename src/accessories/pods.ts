@@ -589,7 +589,7 @@ export default (hap: any) => {
       if (acState.on) {
         this.log(
           'Changed status (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
-          this.indoorMeasurement?.temperature ?? 'unknown',
+          this.roomMeasurement?.temperature ?? 'unknown',
           acState.mode,
           acState.targetTemperature,
           acState.fanLevel,
@@ -597,7 +597,7 @@ export default (hap: any) => {
       } else {
         this.log(
           'Changed status (roomTemp: %s, mode: off)',
-          this.indoorMeasurement?.temperature ?? 'unknown',
+          this.roomMeasurement?.temperature ?? 'unknown',
         );
       }
     }
