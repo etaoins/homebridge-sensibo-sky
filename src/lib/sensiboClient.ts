@@ -56,16 +56,15 @@ function makeRequest(request: Request, callback: (data?: any) => void) {
   req.end();
 }
 
-function post(data: any, callback: (data: any) => void) {
-  data.method = 'POST';
-  makeRequest(data, callback);
+function post(request: Omit<Request, 'method'>, callback: (data: any) => void) {
+  makeRequest({ ...request, method: 'POST' }, callback);
 }
 
 function get(path: string, callback: (data: any) => void) {
   makeRequest({ method: 'GET', path }, callback);
 }
 
-export class Sensibo {
+export class SensiboClient {
   constructor(readonly apiKey: string) {}
 
   getPods(callback: (devices?: Device[]) => void) {
@@ -117,7 +116,7 @@ export class Sensibo {
 
   submitState(deviceId: string, state: AcState, callback: (data: any) => void) {
     const request = {
-      data: {
+      body: {
         acState: {
           on: state.on,
           mode: state.mode,

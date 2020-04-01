@@ -1,17 +1,17 @@
-import { Sensibo } from './lib/sensiboapi';
+import { SensiboClient } from './lib/sensiboClient';
 import { Config } from './lib/config';
 import { Logger } from './types/logger';
 import createSensiboPodAccessory from './accessories/pods';
 
 export class SensiboPlatform {
-  sensibo: Sensibo;
+  sensiboClient: SensiboClient;
 
   constructor(
     readonly log: Logger,
     readonly config: Config,
     readonly homebridgeApi: any,
   ) {
-    this.sensibo = new Sensibo(config.apiKey);
+    this.sensiboClient = new SensiboClient(config.apiKey);
   }
 
   accessories(callback: (accessories: any[]) => void) {
@@ -21,7 +21,7 @@ export class SensiboPlatform {
       this.homebridgeApi.hap,
     );
 
-    this.sensibo.getPods((devices) => {
+    this.sensiboClient.getPods((devices) => {
       if (!devices) {
         this.log(
           'No Senisbo devices returned from Sensibo server! Please check your API key.',

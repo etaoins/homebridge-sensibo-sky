@@ -261,15 +261,18 @@ export default (hap: any) => {
       }
 
       // Update the state
-      this.platform.sensibo.getState(this.deviceId, (acState?: AcState) => {
-        if (acState) {
-          this.applyServerState(acState);
+      this.platform.sensiboClient.getState(
+        this.deviceId,
+        (acState?: AcState) => {
+          if (acState) {
+            this.applyServerState(acState);
 
-          if (callback) {
-            callback();
+            if (callback) {
+              callback();
+            }
           }
-        }
-      });
+        },
+      );
     }
 
     refreshTemperature(callback?: () => void): void {
@@ -290,7 +293,7 @@ export default (hap: any) => {
       }
 
       // Update the temperature
-      this.platform.sensibo.getMeasurements(
+      this.platform.sensiboClient.getMeasurements(
         this.deviceId,
         (data?: Measurement[]) => {
           if (data && data.length > 0) {
@@ -524,7 +527,7 @@ export default (hap: any) => {
       }
 
       this.acState = newAcState;
-      this.platform.sensibo.submitState(
+      this.platform.sensiboClient.submitState(
         this.deviceId,
         newAcState,
         (data: any) => {
