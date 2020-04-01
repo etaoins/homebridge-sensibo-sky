@@ -5,6 +5,7 @@ module.exports = {
     'src/lib/autoMode.ts',
     'src/lib/acState.ts',
     'src/lib/temperature.ts',
+    'src/lib/userState.ts',
   ],
   coverageThreshold: {
     global: {

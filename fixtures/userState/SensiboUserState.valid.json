@@ -1,0 +1,7 @@
+{
+  "masterSwitch": false,
+  "autoMode": false,
+  "heatingThresholdTemperature": 4.0,
+  "targetTemperature": 5.0,
+  "coolingThresholdTemperature": 6.0
+}

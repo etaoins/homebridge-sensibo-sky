@@ -3,7 +3,12 @@ import { acStatesEquivalent, AcState } from '../lib/acState';
 import { Device } from '../lib/device';
 import { Logger } from '../types/logger';
 import { Measurement } from '../lib/measurement';
-import { userStatesEquivalent, UserState } from '../lib/userState';
+import {
+  saveUserState,
+  restoreUserState,
+  userStatesEquivalent,
+  UserState,
+} from '../lib/userState';
 import {
   SENSIBO_TEMPERATURE_RANGE,
   TARGET_TEMPERATURE_RANGE,
@@ -70,13 +75,7 @@ export default (hap: any) => {
         humidity: 0,
       };
 
-      this.userState = {
-        masterSwitch: true,
-        autoMode: false,
-        heatingThresholdTemperature: undefined,
-        targetTemperature: undefined,
-        coolingThresholdTemperature: undefined,
-      };
+      this.userState = restoreUserState(this.platform.config, this.deviceid);
 
       // AccessoryInformation characteristic
       // Manufacturer characteristic
@@ -479,6 +478,8 @@ export default (hap: any) => {
         // Make sure the AC state reflects the user state
         this.updateAcState({}, callback);
       }
+
+      saveUserState(this.platform.config, this.deviceid, newUserState);
     }
 
     updateAcState(stateDelta: Partial<AcState>, callback?: () => void): void {
