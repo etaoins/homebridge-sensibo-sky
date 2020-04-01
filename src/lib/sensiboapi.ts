@@ -4,53 +4,53 @@ import { celciusToFahrenheit } from './temperature';
 import { AcState } from './acState';
 import { Device } from './device';
 
-function _http(data: any, callback: (data: any) => void) {
+interface Request {
+  body?: any;
+  path: string;
+  method: 'GET' | 'DELETE' | 'PUT' | 'POST';
+}
+
+function makeRequest(request: Request, callback: (data?: any) => void) {
   const options = {
     hostname: 'home.sensibo.com',
     port: 443,
-    path: `/api/v2/${data.path}`,
-    method: data.method,
+    path: `/api/v2/${request.path}`,
+    method: request.method,
     headers: {} as Record<string, any>,
   };
 
-  // console.log(options.path);
-  if (data.data) {
-    data.data = JSON.stringify(data.data);
-    options.headers['Content-Length'] = Buffer.byteLength(data.data);
+  const stringBody = request.body ? JSON.stringify(request.body) : undefined;
+  if (stringBody) {
+    options.headers['Content-Length'] = Buffer.byteLength(stringBody);
     options.headers['Content-Type'] = 'application/json';
   }
 
-  let str: string | undefined = '';
+  let acc = '';
   const req = http.request(options, (response) => {
     response.on('data', (chunk) => {
-      str += chunk;
+      acc += chunk;
     });
 
     response.on('end', () => {
+      let parsedBody;
       try {
-        if (typeof str === 'string') {
-          str = JSON.parse(str);
-        }
+        parsedBody = JSON.parse(acc);
       } catch (e) {
-        str = undefined;
+        callback();
+        return;
       }
 
-      if (callback) {
-        callback(str);
-      }
+      callback(parsedBody);
     });
   });
 
   req.on('error', () => {
-    str = undefined;
-    if (callback) {
-      callback(str);
-    }
+    callback();
   });
 
   // For POST (submit) state
-  if (data.data) {
-    req.write(data.data);
+  if (stringBody) {
+    req.write(stringBody);
   }
 
   req.end();
@@ -58,36 +58,30 @@ function _http(data: any, callback: (data: any) => void) {
 
 function post(data: any, callback: (data: any) => void) {
   data.method = 'POST';
-  _http(data, callback);
+  makeRequest(data, callback);
 }
 
-function get(data: any, callback: (data: any) => void) {
-  data.method = 'GET';
-  _http(data, callback);
+function get(path: string, callback: (data: any) => void) {
+  makeRequest({ method: 'GET', path }, callback);
 }
 
 export class Sensibo {
   constructor(readonly apiKey: string) {}
 
   getPods(callback: (devices?: Device[]) => void) {
-    get(
-      { path: `users/me/pods?fields=id,room&apiKey=${this.apiKey}` },
-      (data) => {
-        if (data?.status === 'success' && Array.isArray(data?.result)) {
-          callback(data.result);
-        } else {
-          callback(undefined);
-        }
-      },
-    );
+    get(`users/me/pods?fields=id,room&apiKey=${this.apiKey}`, (data) => {
+      if (data?.status === 'success' && Array.isArray(data?.result)) {
+        callback(data.result);
+      } else {
+        callback(undefined);
+      }
+    });
   }
 
   getState(deviceID: string, callback: (acState?: AcState) => void) {
     // We get the last 10 items in case the first one failed.
     get(
-      {
-        path: `pods/${deviceID}/acStates?fields=status,reason,acState&limit=10&apiKey=${this.apiKey}`,
-      },
+      `pods/${deviceID}/acStates?fields=status,reason,acState&limit=10&apiKey=${this.apiKey}`,
       (data) => {
         if (!data) {
           callback();
@@ -110,9 +104,7 @@ export class Sensibo {
 
   getMeasurements(deviceID: string, callback: (data?: any[]) => void) {
     get(
-      {
-        path: `pods/${deviceID}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
-      },
+      `pods/${deviceID}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
       (data) => {
         if (data?.status === 'success' && Array.isArray(data.result)) {
           callback(data.result);
@@ -124,7 +116,7 @@ export class Sensibo {
   }
 
   submitState(deviceID: string, state: AcState, callback: (data: any) => void) {
-    const data = {
+    const request = {
       data: {
         acState: {
           on: state.on,
@@ -141,6 +133,6 @@ export class Sensibo {
       apiKey: this.apiKey,
     };
 
-    post(data, callback);
+    post(request, callback);
   }
 }
