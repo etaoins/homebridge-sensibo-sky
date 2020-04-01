@@ -17,8 +17,8 @@ import {
 } from '../lib/temperature';
 import type { SensiboPlatform } from '../index';
 
-const stateTimeout = 30000; // in ms to min time elapse to call for refresh
-const tempTimeout = 10000; // in ms to min time elapse before next call for refresh
+const stateTimeout = 30_000; // in ms to min time elapse to call for refresh
+const tempTimeout = 10_000; // in ms to min time elapse before next call for refresh
 
 function heatingCoolingStateForAcState(acState: AcState, characteristic: any) {
   if (acState.on === false) {
@@ -49,6 +49,11 @@ export default (hap: any) => {
     acState: AcState & { updateTime?: Date };
     temp?: Measurement & { updateTime: Date };
     userState: UserState;
+
+    /**
+     * Timeout for debouncing user state changes
+     */
+    userStateApplyTimeout?: NodeJS.Timeout;
 
     constructor(platform: SensiboPlatform, device: Device) {
       const id = uuid.generate(`hbdev:sensibo:pod:${device.id}`);
@@ -95,18 +100,15 @@ export default (hap: any) => {
       this.addService(Service.Switch, 'Split Unit', 'Power')
         .getCharacteristic(Characteristic.On)
         .on('set', (value: any, callback: () => void) => {
-          if (value === this.userState.masterSwitch) {
-            callback();
-            return;
+          if (value && !this.userState.masterSwitch) {
+            this.log('Turning master switch on');
+            this.updateUserState({ masterSwitch: true });
+          } else if (!value && this.userState.masterSwitch) {
+            this.log('Turning master switch off');
+            this.updateUserState({ masterSwitch: false });
           }
 
-          if (value) {
-            this.log('Turning master switch on');
-            this.updateUserState({ masterSwitch: true }, callback);
-          } else {
-            this.log('Turning master switch off');
-            this.updateUserState({ masterSwitch: false }, callback);
-          }
+          callback();
         });
 
       // Thermostat Service
@@ -142,7 +144,8 @@ export default (hap: any) => {
               break;
             case Characteristic.TargetHeatingCoolingState.AUTO:
               this.log('Setting target heating mode to auto');
-              this.updateUserState({ autoMode: true }, callback);
+              this.updateUserState({ autoMode: true });
+              callback();
 
               break;
 
@@ -174,15 +177,14 @@ export default (hap: any) => {
         .on('set', (value: any, callback: () => void) => {
           this.log(`Setting target temperature: ${value}`);
 
-          this.updateUserState(
-            {
-              targetTemperature: clampTemperature(
-                value,
-                SENSIBO_TEMPERATURE_RANGE,
-              ),
-            },
-            callback,
-          );
+          this.updateUserState({
+            targetTemperature: clampTemperature(
+              value,
+              SENSIBO_TEMPERATURE_RANGE,
+            ),
+          });
+
+          callback();
         });
 
       // Heating Threshold Temperature Characteristic
@@ -192,15 +194,14 @@ export default (hap: any) => {
         .on('set', (value: any, callback: () => void) => {
           this.log(`Setting heating threshold: ${value}`);
 
-          this.updateUserState(
-            {
-              heatingThresholdTemperature: clampTemperature(
-                value,
-                TARGET_TEMPERATURE_RANGE,
-              ),
-            },
-            callback,
-          );
+          this.updateUserState({
+            heatingThresholdTemperature: clampTemperature(
+              value,
+              TARGET_TEMPERATURE_RANGE,
+            ),
+          });
+
+          callback();
         });
 
       // Cooling Threshold Temperature Characteristic
@@ -210,15 +211,14 @@ export default (hap: any) => {
         .on('set', (value: any, callback: () => void) => {
           this.log(`Setting cooling threshold: ${value}`);
 
-          this.updateUserState(
-            {
-              coolingThresholdTemperature: clampTemperature(
-                value,
-                TARGET_TEMPERATURE_RANGE,
-              ),
-            },
-            callback,
-          );
+          this.updateUserState({
+            coolingThresholdTemperature: clampTemperature(
+              value,
+              TARGET_TEMPERATURE_RANGE,
+            ),
+          });
+
+          callback();
         });
 
       // Humidity sensor service
@@ -443,20 +443,13 @@ export default (hap: any) => {
       }
     }
 
-    updateUserState(
-      stateDelta: Partial<UserState>,
-      callback?: () => void,
-    ): void {
+    updateUserState(stateDelta: Partial<UserState>): void {
       const newUserState: UserState = {
         ...this.userState,
         ...stateDelta,
       };
 
       if (userStatesEquivalent(this.userState, newUserState)) {
-        if (callback) {
-          callback();
-        }
-
         return;
       }
 
@@ -468,16 +461,23 @@ export default (hap: any) => {
         this.updateCharacteristicsForManualMode(this.acState, newUserState);
       }
 
-      // HACK: If we don't have a callback the caller probably about to call `updateAcState`
-      if (callback) {
-        // Make sure the AC state reflects the user state
-        this.updateAcState({}, callback);
+      if (this.userStateApplyTimeout) {
+        global.clearInterval(this.userStateApplyTimeout);
       }
+
+      this.userStateApplyTimeout = global.setInterval(
+        () => this.updateAcState({}),
+        500,
+      );
 
       saveUserState(this.platform.config, this.deviceId, newUserState);
     }
 
     updateAcState(stateDelta: Partial<AcState>, callback?: () => void): void {
+      if (this.userStateApplyTimeout) {
+        global.clearInterval(this.userStateApplyTimeout);
+      }
+
       const {
         autoMode,
         masterSwitch,
