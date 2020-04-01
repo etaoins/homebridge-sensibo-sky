@@ -24,7 +24,6 @@
   "scripts": {
     "build": "tsc",
     "prepack": "yarn build",
-    "prepublish": "yarn build",
     "format": "yarn format:eslint && yarn format:prettier",
     "format:prettier": "prettier --write 'src/**/*.ts'",
     "format:eslint": "eslint --fix 'src/**/*.ts'",
