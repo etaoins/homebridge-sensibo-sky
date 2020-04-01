@@ -1,5 +1,6 @@
-import { calculateDesiredAcState } from './autoMode';
+import { calculateDesiredAcState } from './temperatureController';
 import { AcState } from './acState';
+import * as humidityController from './humidityController';
 
 const MOCK_AC_STATE: AcState = {
   on: true,
@@ -10,6 +11,8 @@ const MOCK_AC_STATE: AcState = {
 };
 
 describe('calculateDesiredAcState', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   it('should do nothing if the temperature is in range and the unit is off', () => {
     const log = jest.fn();
 
@@ -333,6 +336,104 @@ describe('calculateDesiredAcState', () => {
     expect(log).toBeCalledTimes(1);
     expect(nextState).toMatchObject({
       mode: 'heat',
+      on: false,
+    });
+  });
+
+  it('should allow the humidity controller to switch to fan mode when crossing the temperature threshold', () => {
+    const log = jest.fn();
+    const shouldSwitchToFanModeSpy = jest
+      .spyOn(humidityController, 'shouldSwitchToFanMode')
+      .mockReturnValue(true);
+
+    const nextState = calculateDesiredAcState(
+      log as any,
+      {
+        roomMeasurement: {
+          humidity: 60,
+          temperature: 22.0,
+        },
+        outdoorMeasurement: {
+          humidity: 40,
+          temperature: 22.0,
+        },
+        heatingThresholdTemperature: 19.0,
+        coolingThresholdTemperature: 23.0,
+      },
+      { ...MOCK_AC_STATE, on: true, mode: 'heat' },
+    );
+
+    expect(log).toBeCalledTimes(1);
+    expect(shouldSwitchToFanModeSpy).toBeCalledTimes(1);
+
+    expect(nextState).toMatchObject({
+      on: true,
+      mode: 'fan',
+      fanLevel: 'low',
+    });
+  });
+
+  it('should allow the humidity controller to not switch to fan mode when crossing the temperature threshold', () => {
+    const log = jest.fn();
+    const shouldSwitchToFanModeSpy = jest
+      .spyOn(humidityController, 'shouldSwitchToFanMode')
+      .mockReturnValue(false);
+
+    const nextState = calculateDesiredAcState(
+      log as any,
+      {
+        roomMeasurement: {
+          humidity: 40,
+          temperature: 20.0,
+        },
+        outdoorMeasurement: {
+          humidity: 89,
+          temperature: 22.0,
+        },
+        heatingThresholdTemperature: 19.0,
+        coolingThresholdTemperature: 23.0,
+      },
+      { ...MOCK_AC_STATE, on: true, mode: 'cool' },
+    );
+
+    expect(log).toBeCalledTimes(2);
+    expect(log).toBeCalledWith('Crossed temperature mid-point, switching off');
+
+    expect(shouldSwitchToFanModeSpy).toBeCalledTimes(1);
+
+    expect(nextState).toMatchObject({
+      mode: 'cool',
+      on: false,
+    });
+  });
+
+  it('should allow the humidity controller to stop the fan while in fan mode', () => {
+    const log = jest.fn();
+    const shouldStopFanSpy = jest
+      .spyOn(humidityController, 'shouldStopFan')
+      .mockReturnValue(true);
+
+    const nextState = calculateDesiredAcState(
+      log as any,
+      {
+        roomMeasurement: {
+          humidity: 60,
+          temperature: 22.0,
+        },
+        outdoorMeasurement: {
+          humidity: 40,
+          temperature: 22.0,
+        },
+        heatingThresholdTemperature: 19.0,
+        coolingThresholdTemperature: 23.0,
+      },
+      { ...MOCK_AC_STATE, on: true, mode: 'fan' },
+    );
+
+    expect(log).toBeCalledTimes(1);
+    expect(shouldStopFanSpy).toBeCalledTimes(1);
+
+    expect(nextState).toMatchObject({
       on: false,
     });
   });

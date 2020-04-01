@@ -1,6 +1,7 @@
 import { Logger } from '../types/logger';
 
 import { AcState, FanLevel } from './acState';
+import { shouldStopFan, shouldSwitchToFanMode } from './humidityController';
 import { Measurement } from './measurement';
 import { SENSIBO_TEMPERATURE_RANGE, clampTemperature } from './temperature';
 
@@ -16,19 +17,23 @@ function fanLevelForTemperatureDeviation(deviation: number): FanLevel {
 
 interface AutoModeInput {
   roomMeasurement: Measurement;
+  outdoorMeasurement?: Measurement;
   heatingThresholdTemperature: number;
   coolingThresholdTemperature: number;
 }
 
 export function calculateDesiredAcState(
   log: Logger,
-  {
-    roomMeasurement,
-    heatingThresholdTemperature,
-    coolingThresholdTemperature,
-  }: AutoModeInput,
+  input: AutoModeInput,
   prevState: AcState,
 ): AcState {
+  const {
+    roomMeasurement,
+    outdoorMeasurement,
+    heatingThresholdTemperature,
+    coolingThresholdTemperature,
+  } = input;
+
   log(
     'Calculating desired state (roomTemp: %s, roomHumid: %s, mode: %s, heatingThresh %s, coolingThresh: %s)',
     roomMeasurement.temperature,
@@ -84,9 +89,25 @@ export function calculateDesiredAcState(
       roomMeasurement.temperature < midPointTemperature)
   ) {
     if (prevState.on === true) {
-      log('Crossed temperature mid-point, switching off');
+      // Give the humidifier a chance to switch to fan mode
+      if (
+        outdoorMeasurement &&
+        shouldSwitchToFanMode(log, { ...input, outdoorMeasurement })
+      ) {
+        nextState.mode = 'fan';
+        nextState.fanLevel = 'low';
+      } else {
+        log('Crossed temperature mid-point, switching off');
+        nextState.on = false;
+      }
     }
-
+  } else if (
+    prevState.on === true &&
+    prevState.mode === 'fan' &&
+    outdoorMeasurement &&
+    shouldStopFan(log, { ...input, outdoorMeasurement })
+  ) {
+    // Stop (de)humidifying
     nextState.on = false;
   }
 

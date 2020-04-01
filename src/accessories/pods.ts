@@ -1,4 +1,4 @@
-import { calculateDesiredAcState } from '../lib/autoMode';
+import { calculateDesiredAcState } from '../lib/temperatureController';
 import { acStatesEquivalent, AcState } from '../lib/acState';
 import {
   intervalUntilNextObservation,
@@ -534,6 +534,7 @@ export default (hap: any) => {
             this.log.bind(this),
             {
               roomMeasurement: this.roomMeasurement,
+              outdoorMeasurement: this.outdoorMeasurement,
               heatingThresholdTemperature,
               coolingThresholdTemperature,
             },

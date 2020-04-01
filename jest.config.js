@@ -4,6 +4,7 @@ module.exports = {
   collectCoverageFrom: [
     'src/lib/autoMode.ts',
     'src/lib/acState.ts',
+    'src/lib/humidityController.ts',
     'src/lib/temperature.ts',
     'src/lib/userState.ts',
   ],
