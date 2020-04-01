@@ -224,13 +224,18 @@ export default (hap: any) => {
       // Humidity sensor service
       this.addService(Service.HumiditySensor);
 
-      this.loadData();
-      setInterval(this.loadData.bind(this), 30000);
+      this.pollSensibo();
+      setInterval(this.pollSensibo.bind(this), 30000);
     }
 
-    loadData(callback?: () => void): void {
-      this.refreshState(() =>
-        this.refreshTemperature(() => this.updateAcState({}, callback)),
+    pollSensibo(): void {
+      this.refreshAcState((newAcState) =>
+        this.refreshTemp((newTemp) => {
+          // Only update our state if we have new information
+          if (newAcState || newTemp) {
+            this.updateAcState({});
+          }
+        }),
       );
     }
 
@@ -238,7 +243,7 @@ export default (hap: any) => {
       return this.services;
     }
 
-    refreshState(callback?: () => void): void {
+    refreshAcState(callback: (newState?: AcState) => void): void {
       // This prevents this from running more often
       const rightnow = new Date();
 
@@ -246,9 +251,7 @@ export default (hap: any) => {
         this.acState.updateTime &&
         rightnow.getTime() - this.acState.updateTime.getTime() < stateTimeout
       ) {
-        if (callback) {
-          callback();
-        }
+        callback();
         return;
       }
       if (!this.acState.updateTime) {
@@ -261,24 +264,20 @@ export default (hap: any) => {
         (acState?: AcState) => {
           if (acState) {
             this.applyServerState(acState);
-
-            if (callback) {
-              callback();
-            }
           }
+
+          callback(acState);
         },
       );
     }
 
-    refreshTemperature(callback?: () => void): void {
+    refreshTemp(callback: (newTemp?: Measurement) => void): void {
       // This prevents this from running more often
       if (
         this.temp &&
         Date.now() - this.temp.updateTime.getTime() < tempTimeout
       ) {
-        if (callback) {
-          callback();
-        }
+        callback();
         return;
       }
 
@@ -304,8 +303,8 @@ export default (hap: any) => {
             );
 
             this.temp = newTemp;
-          }
-          if (callback) {
+            callback(newTemp);
+          } else {
             callback();
           }
         },
@@ -462,10 +461,10 @@ export default (hap: any) => {
       }
 
       if (this.userStateApplyTimeout) {
-        global.clearInterval(this.userStateApplyTimeout);
+        global.clearTimeout(this.userStateApplyTimeout);
       }
 
-      this.userStateApplyTimeout = global.setInterval(
+      this.userStateApplyTimeout = global.setTimeout(
         () => this.updateAcState({}),
         500,
       );
@@ -476,6 +475,7 @@ export default (hap: any) => {
     updateAcState(stateDelta: Partial<AcState>, callback?: () => void): void {
       if (this.userStateApplyTimeout) {
         global.clearInterval(this.userStateApplyTimeout);
+        this.userStateApplyTimeout = undefined;
       }
 
       const {
