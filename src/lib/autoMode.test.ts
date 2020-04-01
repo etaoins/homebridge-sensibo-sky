@@ -14,7 +14,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 21.0,
         heatingThresholdTemperature: 19.0,
@@ -32,7 +32,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 18.0,
         heatingThresholdTemperature: 19.0,
@@ -58,7 +58,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 17.0,
         heatingThresholdTemperature: 19.0,
@@ -84,7 +84,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 14.0,
         heatingThresholdTemperature: 19.0,
@@ -110,7 +110,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 14.0,
         heatingThresholdTemperature: 19.0,
@@ -133,7 +133,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 26.0,
         heatingThresholdTemperature: 19.0,
@@ -159,7 +159,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 28.0,
         heatingThresholdTemperature: 19.0,
@@ -185,7 +185,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 26.0,
         heatingThresholdTemperature: 19.0,
@@ -208,7 +208,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 22.0,
         heatingThresholdTemperature: 19.0,
@@ -229,7 +229,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 20.0,
         heatingThresholdTemperature: 19.0,
@@ -250,7 +250,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 20.0,
         heatingThresholdTemperature: 19.0,
@@ -272,7 +272,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 22.0,
         heatingThresholdTemperature: 19.0,
@@ -295,7 +295,7 @@ describe('calculateDesiredAcState', () => {
     const log = jest.fn();
 
     const nextState = calculateDesiredAcState(
-      log,
+      log as any,
       {
         roomTemperature: 22.0,
         heatingThresholdTemperature: 19.0,

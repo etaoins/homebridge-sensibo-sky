@@ -1,6 +1,7 @@
 import { calculateDesiredAcState } from '../lib/autoMode';
 import { acStatesEquivalent, AcState } from '../lib/acState';
 import { Device } from '../lib/device';
+import { Logger, LogFunction } from '../types/logger';
 import { Measurement } from '../lib/measurement';
 import { UserState } from '../lib/userState';
 import {
@@ -39,8 +40,8 @@ export default function (hap: any) {
     deviceGroup: string;
     deviceid: string;
     platform: SensiboPlatform;
-    log: Function;
-    debug: Function;
+    log: Logger;
+    debug: LogFunction;
     temp: {
       temperature: number;
       humidity: number;
@@ -48,7 +49,7 @@ export default function (hap: any) {
     };
     userState: UserState;
 
-    constructor(platform: any, device: Device) {
+    constructor(platform: SensiboPlatform, device: Device) {
       const id = uuid.generate(`hbdev:sensibo:pod:${device.id}`);
       super(device.room.name, id);
 

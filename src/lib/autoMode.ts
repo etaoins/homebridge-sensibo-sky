@@ -1,3 +1,5 @@
+import { Logger } from '../types/logger';
+
 import { AcState, FanLevel } from './acState';
 import { SENSIBO_TEMPERATURE_RANGE, clampTemperature } from './temperature';
 
@@ -19,7 +21,7 @@ interface AutoModeInput {
 }
 
 export function calculateDesiredAcState(
-  log: Function,
+  log: Logger,
   {
     roomTemperature,
     heatingThresholdTemperature,
