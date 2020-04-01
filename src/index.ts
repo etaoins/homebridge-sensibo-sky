@@ -1,4 +1,4 @@
-import sensibo from './lib/sensiboapi';
+import { Sensibo } from './lib/sensiboapi';
 import { Config } from './lib/config';
 import { Logger } from './types/logger';
 import createSensiboPodAccessory from './accessories/pods';
@@ -6,14 +6,10 @@ import createSensiboPodAccessory from './accessories/pods';
 let SensiboPodAccessory: any;
 
 export class SensiboPlatform {
-  apiKey: string;
-  sensibo: typeof sensibo;
-  log: Logger;
+  sensibo: Sensibo;
 
-  constructor(log: Logger, config: Config) {
-    this.apiKey = config.apiKey;
-    this.sensibo = sensibo;
-    this.log = log;
+  constructor(readonly log: Logger, readonly config: Config) {
+    this.sensibo = new Sensibo(config.apiKey);
   }
 
   accessories(callback: (accessories: any[]) => void) {
@@ -21,8 +17,7 @@ export class SensiboPlatform {
 
     const foundAccessories: any[] = [];
 
-    sensibo.init(this.apiKey);
-    sensibo.getPods((devices) => {
+    this.sensibo.getPods((devices) => {
       if (devices != null) {
         for (let i = 0; i < devices.length; i++) {
           const device = devices[i];

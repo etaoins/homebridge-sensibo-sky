@@ -68,12 +68,8 @@ function get(data: any, callback: (data: any) => void) {
   _http(data, callback);
 }
 
-class Sensibo {
-  apiKey?: string;
-
-  init(inKey: string) {
-    this.apiKey = inKey;
-  }
+export class Sensibo {
+  constructor(readonly apiKey: string) {}
 
   getPods(callback: (devices?: Device[]) => void) {
     get(
@@ -167,5 +163,3 @@ class Sensibo {
     post(data, callback);
   }
 }
-
-export default new Sensibo();
