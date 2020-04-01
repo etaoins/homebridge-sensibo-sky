@@ -9,6 +9,7 @@ import {
   clampTemperature,
   fahrenheitToCelsius,
 } from '../lib/temperature';
+import type { SensiboPlatform } from '../index';
 
 const stateTimeout = 30000; // in ms to min time elapse to call for refresh
 const tempTimeout = 10000; // in ms to min time elapse before next call for refresh
@@ -37,7 +38,7 @@ export default function (hap: any) {
     acState: AcState & { updatetime?: Date };
     deviceGroup: string;
     deviceid: string;
-    platform: any;
+    platform: SensiboPlatform;
     log: Function;
     debug: Function;
     temp: {
@@ -267,7 +268,7 @@ export default function (hap: any) {
       }
 
       // Update the state
-      this.platform.api.getState(this.deviceid, (acState: AcState) => {
+      this.platform.sensibo.getState(this.deviceid, (acState?: AcState) => {
         if (acState) {
           this.applyServerState(acState);
 
@@ -296,7 +297,7 @@ export default function (hap: any) {
       }
 
       // Update the temperature
-      this.platform.api.getMeasurements(
+      this.platform.sensibo.getMeasurements(
         this.deviceid,
         (data?: Measurement[]) => {
           if (data && data.length > 0) {
@@ -524,22 +525,26 @@ export default function (hap: any) {
       }
 
       this.acState = newAcState;
-      this.platform.api.submitState(this.deviceid, newAcState, (data: any) => {
-        if (data && data.result && data.result.status === 'Success') {
-          const { acState } = data.result;
+      this.platform.sensibo.submitState(
+        this.deviceid,
+        newAcState,
+        (data: any) => {
+          if (data && data.result && data.result.status === 'Success') {
+            const { acState } = data.result;
 
-          this.acState = acState;
+            this.acState = acState;
 
-          this.logStateChange();
-          this.applyServerState(data.result.acState);
-        } else {
-          this.log('Error setting state');
-        }
+            this.logStateChange();
+            this.applyServerState(data.result.acState);
+          } else {
+            this.log('Error setting state');
+          }
 
-        if (callback) {
-          callback();
-        }
-      });
+          if (callback) {
+            callback();
+          }
+        },
+      );
     }
 
     logStateChange(): void {

@@ -4,16 +4,16 @@ import createSensiboPodAccessory from './accessories/pods';
 
 let SensiboPodAccessory: any;
 
-class SensiboPlatform {
+export class SensiboPlatform {
   apiKey: string;
-  api: typeof sensibo;
+  sensibo: typeof sensibo;
   log: Function;
   debug: Function;
   deviceLookup: any[];
 
   constructor(log: any, config: Config) {
     this.apiKey = config.apiKey;
-    this.api = sensibo;
+    this.sensibo = sensibo;
     this.log = log;
     this.debug = log.debug;
     this.deviceLookup = [];
