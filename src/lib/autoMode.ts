@@ -1,7 +1,5 @@
-const {
-  SENSIBO_TEMPERATURE_RANGE,
-  clampTemperature,
-} = require('../lib/temperature');
+import { AcState } from './acState';
+import { SENSIBO_TEMPERATURE_RANGE, clampTemperature } from './temperature';
 
 function fanLevelForTemperatureDeviation(deviation) {
   if (deviation > 4.0) {
@@ -13,16 +11,23 @@ function fanLevelForTemperatureDeviation(deviation) {
   return 'low';
 }
 
-function calculateDesiredAcState(
+interface AutoModeInput {
+  roomTemperature: number;
+  heatingThresholdTemperature?: number;
+  userTargetTemperature?: number;
+  coolingThresholdTemperature?: number;
+}
+
+export function calculateDesiredAcState(
   log,
   {
     roomTemperature,
     heatingThresholdTemperature,
     userTargetTemperature,
     coolingThresholdTemperature,
-  },
-  prevState,
-) {
+  }: AutoModeInput,
+  prevState: AcState,
+): AcState {
   log(
     'Calculating desired state (roomTemp: %s, mode: %s, heatingThresh %s, userTarget: %s, coolingThresh: %s)',
     roomTemperature,
@@ -87,5 +92,3 @@ function calculateDesiredAcState(
 
   return nextState;
 }
-
-module.exports = { calculateDesiredAcState };

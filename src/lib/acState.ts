@@ -1,4 +1,12 @@
-function acStatesEquivalent(left, right) {
+export interface AcState {
+  on: boolean;
+  targetTemperature: number;
+  mode: 'heat' | 'cool';
+  fanLevel: 'auto' | 'low' | 'medium' | 'high';
+  temperatureUnit: 'F' | 'C';
+}
+
+export function acStatesEquivalent(left: AcState, right: AcState): boolean {
   if (left.on === false && right.on === false) {
     // If both states are off the other values don't matter
     return true;
@@ -11,5 +19,3 @@ function acStatesEquivalent(left, right) {
     left.fanLevel === right.fanLevel
   );
 }
-
-module.exports = { acStatesEquivalent };

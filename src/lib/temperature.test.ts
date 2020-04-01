@@ -1,4 +1,8 @@
-const { clampTemperature, fahrenheitToCelsius } = require('./temperature');
+import {
+  clampTemperature,
+  fahrenheitToCelsius,
+  celciusToFahrenheit,
+} from './temperature';
 
 describe('clampTemperature', () => {
   it('should pass through an in-range temperature', () => {
@@ -43,5 +47,19 @@ describe('fahrenheitToCelsius', () => {
 
   it('should handle above freezing temperatures', () => {
     expect(fahrenheitToCelsius(50)).toEqual(10);
+  });
+});
+
+describe('celciusToFahrenheit', () => {
+  it('should handle below freezing temperatures', () => {
+    expect(celciusToFahrenheit(-10)).toEqual(14);
+  });
+
+  it('should handle freezing point', () => {
+    expect(celciusToFahrenheit(0)).toEqual(32);
+  });
+
+  it('should handle above freezing temperatures', () => {
+    expect(celciusToFahrenheit(10)).toEqual(50);
   });
 });

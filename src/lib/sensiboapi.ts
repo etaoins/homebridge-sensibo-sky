@@ -1,4 +1,7 @@
-const http = require('https');
+import http from 'https';
+
+import { celciusToFahrenheit } from './temperature';
+import { AcState } from './acState';
 
 function _http(data, callback) {
   const options = {
@@ -62,10 +65,12 @@ function get(data, callback) {
   _http(data, callback);
 }
 
-const sensibo = {
-  init(inKey) {
+class Sensibo {
+  apiKey?: string;
+
+  init(inKey: string) {
     this.apiKey = inKey;
-  },
+  }
 
   getPods(callback) {
     get(
@@ -84,9 +89,9 @@ const sensibo = {
         }
       },
     );
-  },
+  }
 
-  getState(deviceID, callback) {
+  getState(deviceID: string, callback: (acState?: AcState) => void) {
     // We get the last 10 items in case the first one failed.
     get(
       {
@@ -115,9 +120,9 @@ const sensibo = {
         }
       },
     );
-  },
+  }
 
-  getMeasurements(deviceID, callback) {
+  getMeasurements(deviceID: string, callback) {
     get(
       {
         path: `pods/${deviceID}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
@@ -136,30 +141,28 @@ const sensibo = {
         }
       },
     );
-  },
+  }
 
-  submitState(deviceID, state, callback) {
-    const data = {};
-    data.data = {
-      acState: {
-        on: state.on,
-        mode: state.mode,
-        fanLevel: state.fanLevel,
-        targetTemperature:
-          state.temperatureUnit === 'F'
-            ? convertToFahrenheit(state.targetTemperature)
-            : state.targetTemperature,
-        temperatureUnit: state.temperatureUnit,
+  submitState(deviceID: string, state: AcState, callback) {
+    const data = {
+      data: {
+        acState: {
+          on: state.on,
+          mode: state.mode,
+          fanLevel: state.fanLevel,
+          targetTemperature:
+            state.temperatureUnit === 'F'
+              ? celciusToFahrenheit(state.targetTemperature)
+              : state.targetTemperature,
+          temperatureUnit: state.temperatureUnit,
+        },
       },
+      path: `pods/${deviceID}/acStates?apiKey=${this.apiKey}`,
+      apiKey: this.apiKey,
     };
-    data.path = `pods/${deviceID}/acStates?apiKey=${this.apiKey}`;
-    data.apiKey = this.apiKey;
-    post(data, callback);
-  },
-};
 
-function convertToFahrenheit(value) {
-  return Math.round(value * 1.8 + 32);
+    post(data, callback);
+  }
 }
 
-module.exports = sensibo;
+export default new Sensibo();
