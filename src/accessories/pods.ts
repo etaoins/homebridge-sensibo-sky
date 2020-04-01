@@ -42,11 +42,7 @@ export default function (hap: any) {
     log: Logger;
 
     acState: AcState & { updatetime?: Date };
-    temp: {
-      temperature: number;
-      humidity: number;
-      updatetime?: Date;
-    };
+    temp: Measurement & { updatetime?: Date };
     userState: UserState;
 
     constructor(platform: SensiboPlatform, device: Device) {
@@ -457,7 +453,7 @@ export default function (hap: any) {
       stateDelta: Partial<UserState>,
       callback?: () => void,
     ): void {
-      const newUserState = {
+      const newUserState: UserState = {
         ...this.userState,
         ...stateDelta,
       };
@@ -494,7 +490,7 @@ export default function (hap: any) {
         coolingThresholdTemperature,
       } = this.userState;
 
-      let newAcState = {
+      let newAcState: AcState = {
         ...this.acState,
         ...stateDelta,
       };
@@ -518,7 +514,7 @@ export default function (hap: any) {
         );
       } else {
         newAcState.fanLevel = 'auto';
-        if (typeof userTargetTemperature !== 'undefined') {
+        if (typeof userTargetTemperature === 'number') {
           newAcState.targetTemperature = userTargetTemperature;
         }
 
