@@ -3,7 +3,7 @@ import { acStatesEquivalent, AcState } from '../lib/acState';
 import { Device } from '../lib/device';
 import { Logger, LogFunction } from '../types/logger';
 import { Measurement } from '../lib/measurement';
-import { UserState } from '../lib/userState';
+import { userStatesEquivalent, UserState } from '../lib/userState';
 import {
   SENSIBO_TEMPERATURE_RANGE,
   TARGET_TEMPERATURE_RANGE,
@@ -462,6 +462,14 @@ export default function (hap: any) {
         ...this.userState,
         ...stateDelta,
       };
+
+      if (userStatesEquivalent(this.userState, newUserState)) {
+        if (callback) {
+          callback();
+        }
+
+        return;
+      }
 
       this.userState = newUserState;
 
