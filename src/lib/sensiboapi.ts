@@ -78,10 +78,10 @@ export class Sensibo {
     });
   }
 
-  getState(deviceID: string, callback: (acState?: AcState) => void) {
+  getState(deviceId: string, callback: (acState?: AcState) => void) {
     // We get the last 10 items in case the first one failed.
     get(
-      `pods/${deviceID}/acStates?fields=status,reason,acState&limit=10&apiKey=${this.apiKey}`,
+      `pods/${deviceId}/acStates?fields=status,reason,acState&limit=10&apiKey=${this.apiKey}`,
       (data) => {
         if (!data) {
           callback();
@@ -102,9 +102,9 @@ export class Sensibo {
     );
   }
 
-  getMeasurements(deviceID: string, callback: (data?: any[]) => void) {
+  getMeasurements(deviceId: string, callback: (data?: any[]) => void) {
     get(
-      `pods/${deviceID}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
+      `pods/${deviceId}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
       (data) => {
         if (data?.status === 'success' && Array.isArray(data.result)) {
           callback(data.result);
@@ -115,7 +115,7 @@ export class Sensibo {
     );
   }
 
-  submitState(deviceID: string, state: AcState, callback: (data: any) => void) {
+  submitState(deviceId: string, state: AcState, callback: (data: any) => void) {
     const request = {
       data: {
         acState: {
@@ -129,7 +129,7 @@ export class Sensibo {
           temperatureUnit: state.temperatureUnit,
         },
       },
-      path: `pods/${deviceID}/acStates?apiKey=${this.apiKey}`,
+      path: `pods/${deviceId}/acStates?apiKey=${this.apiKey}`,
       apiKey: this.apiKey,
     };
 

@@ -37,7 +37,7 @@ export class SensiboPlatform {
         this.log(
           'Device Added (Name: %s, ID: %s, Group: %s)',
           accessory.name,
-          accessory.deviceid,
+          accessory.deviceId,
           accessory.deviceGroup,
         );
 

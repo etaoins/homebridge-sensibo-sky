@@ -42,7 +42,7 @@ export default (hap: any) => {
 
   return class SensiboPodAccessory extends Accessory {
     deviceGroup: string;
-    deviceid: string;
+    deviceId: string;
     platform: SensiboPlatform;
     log: Logger;
 
@@ -55,7 +55,7 @@ export default (hap: any) => {
       super(device.room.name, id);
 
       this.deviceGroup = 'pods';
-      this.deviceid = device.id;
+      this.deviceId = device.id;
       this.name = device.room.name;
       this.platform = platform;
       this.log = platform.log;
@@ -75,7 +75,7 @@ export default (hap: any) => {
         humidity: 0,
       };
 
-      this.userState = restoreUserState(this.platform.config, this.deviceid);
+      this.userState = restoreUserState(this.platform.config, this.deviceId);
 
       // AccessoryInformation characteristic
       // Manufacturer characteristic
@@ -93,7 +93,7 @@ export default (hap: any) => {
       // SerialNumber characteristic
       this.getService(Service.AccessoryInformation).setCharacteristic(
         Characteristic.SerialNumber,
-        `Pod ID: ${this.deviceid}`,
+        `Pod ID: ${this.deviceId}`,
       );
 
       // Master switch
@@ -261,7 +261,7 @@ export default (hap: any) => {
       }
 
       // Update the state
-      this.platform.sensibo.getState(this.deviceid, (acState?: AcState) => {
+      this.platform.sensibo.getState(this.deviceId, (acState?: AcState) => {
         if (acState) {
           this.applyServerState(acState);
 
@@ -291,7 +291,7 @@ export default (hap: any) => {
 
       // Update the temperature
       this.platform.sensibo.getMeasurements(
-        this.deviceid,
+        this.deviceId,
         (data?: Measurement[]) => {
           if (data && data.length > 0) {
             this.temp.temperature = data[0].temperature;
@@ -477,7 +477,7 @@ export default (hap: any) => {
         this.updateAcState({}, callback);
       }
 
-      saveUserState(this.platform.config, this.deviceid, newUserState);
+      saveUserState(this.platform.config, this.deviceId, newUserState);
     }
 
     updateAcState(stateDelta: Partial<AcState>, callback?: () => void): void {
@@ -525,7 +525,7 @@ export default (hap: any) => {
 
       this.acState = newAcState;
       this.platform.sensibo.submitState(
-        this.deviceid,
+        this.deviceId,
         newAcState,
         (data: any) => {
           if (data && data.result && data.result.status === 'Success') {
