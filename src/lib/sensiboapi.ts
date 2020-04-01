@@ -73,13 +73,7 @@ export class Sensibo {
     get(
       { path: `users/me/pods?fields=id,room&apiKey=${this.apiKey}` },
       (data) => {
-        if (
-          data &&
-          data.status &&
-          data.status === 'success' &&
-          data.result &&
-          data.result instanceof Array
-        ) {
+        if (data?.status === 'success' && Array.isArray(data?.result)) {
           callback(data.result);
         } else {
           callback(undefined);
@@ -95,23 +89,18 @@ export class Sensibo {
         path: `pods/${deviceID}/acStates?fields=status,reason,acState&limit=10&apiKey=${this.apiKey}`,
       },
       (data) => {
-        if (
-          data &&
-          data.status &&
-          data.status === 'success' &&
-          data.result &&
-          data.result instanceof Array
-        ) {
-          let i = 0;
-          for (i = 0; i < data.result.length; i++) {
-            if (data.result[i].status === 'Success') {
-              break;
-            }
-          }
-          if (i === data.result.length) {
-            i = 0;
-          }
-          callback(data.result[i].acState);
+        if (!data) {
+          callback();
+          return;
+        }
+
+        const { status, result } = data;
+        if (status === 'success' && Array.isArray(result)) {
+          const firstSuccess = result.find(
+            (entry) => entry.status === 'Success',
+          );
+
+          callback(firstSuccess?.acState);
         } else {
           callback();
         }
@@ -125,16 +114,10 @@ export class Sensibo {
         path: `pods/${deviceID}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
       },
       (data) => {
-        if (
-          data &&
-          data.status &&
-          data.status === 'success' &&
-          data.result &&
-          data.result instanceof Array
-        ) {
+        if (data?.status === 'success' && Array.isArray(data.result)) {
           callback(data.result);
         } else {
-          callback(undefined);
+          callback();
         }
       },
     );
