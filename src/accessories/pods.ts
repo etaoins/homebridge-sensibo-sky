@@ -1,5 +1,9 @@
 import { calculateDesiredAcState } from '../lib/autoMode';
 import { acStatesEquivalent, AcState } from '../lib/acState';
+import {
+  intervalUntilNextObservation,
+  getOutdoorMeasurement,
+} from '../lib/bomClient';
 import { Device } from '../lib/device';
 import { Logger } from '../types/logger';
 import { Measurement } from '../lib/measurement';
@@ -48,12 +52,13 @@ export default (hap: any) => {
 
     acState: AcState & { updateTime?: Date };
     roomMeasurement?: Measurement & { updateTime: Date };
+    outdoorMeasurement?: Measurement;
     userState: UserState;
 
     /**
      * Timeout for debouncing user state changes
      */
-    userStateApplyTimeout?: NodeJS.Timeout;
+    userStateApplyTimeout?: NodeJS.Timer;
 
     constructor(platform: SensiboPlatform, device: Device) {
       const id = uuid.generate(`hbdev:sensibo:pod:${device.id}`);
@@ -225,7 +230,35 @@ export default (hap: any) => {
       this.addService(Service.HumiditySensor);
 
       this.pollSensibo();
-      setInterval(this.pollSensibo.bind(this), 30000);
+      global.setInterval(this.pollSensibo.bind(this), 30000);
+
+      const { bomObservationsUrl } = this.platform.config;
+      if (bomObservationsUrl) {
+        const refreshOutdoorMeasurement = () => {
+          const resetTimer = () => {
+            global.setTimeout(
+              refreshOutdoorMeasurement,
+              intervalUntilNextObservation(),
+            );
+          };
+
+          getOutdoorMeasurement(bomObservationsUrl)
+            .then((measurement) => {
+              this.outdoorMeasurement = measurement;
+              this.log(
+                `Retrieved BOM observation (outdoorTemp: ${measurement.temperature}, outdoorHumid: ${measurement.humidity})`,
+              );
+              resetTimer();
+            })
+            .catch(() => {
+              this.log('Error retrieving BOM observation');
+              resetTimer();
+            });
+          return;
+        };
+
+        refreshOutdoorMeasurement();
+      }
     }
 
     pollSensibo(): void {

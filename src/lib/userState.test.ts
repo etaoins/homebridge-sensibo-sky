@@ -79,7 +79,7 @@ describe('restoreUserState', () => {
   it('should return a default state with a state file with invalid JSON', () => {
     expect(
       restoreUserState(
-        { userStateDirectory: './fixtures/userState' },
+        { userStateDirectory: './src/fixtures/userState' },
         'invalid',
       ),
     ).toStrictEqual(DEFAULT_USER_STATE);
@@ -87,7 +87,10 @@ describe('restoreUserState', () => {
 
   it('should return a saved state file with valid JSON', () => {
     expect(
-      restoreUserState({ userStateDirectory: './fixtures/userState' }, 'valid'),
+      restoreUserState(
+        { userStateDirectory: './src/fixtures/userState' },
+        'valid',
+      ),
     ).toMatchInlineSnapshot(`
       Object {
         "autoMode": false,
