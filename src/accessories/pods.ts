@@ -531,13 +531,11 @@ export default (hap: any) => {
         this.deviceId,
         newAcState,
         (data: any) => {
-          if (data && data.result && data.result.status === 'Success') {
+          if (data?.result.status === 'Success') {
             const { acState } = data.result;
 
-            this.acState = acState;
-
-            this.logStateChange();
-            this.applyServerState(data.result.acState);
+            this.logStateChange(acState);
+            this.applyServerState(acState);
           } else {
             this.log('Error setting state');
           }
@@ -549,14 +547,14 @@ export default (hap: any) => {
       );
     }
 
-    logStateChange(): void {
-      if (this.acState.on) {
+    logStateChange(acState: AcState): void {
+      if (acState.on) {
         this.log(
           'Changed status (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
           this.temp.temperature,
-          this.acState.mode,
-          this.acState.targetTemperature,
-          this.acState.fanLevel,
+          acState.mode,
+          acState.targetTemperature,
+          acState.fanLevel,
         );
       } else {
         this.log(
