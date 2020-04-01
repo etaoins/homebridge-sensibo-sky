@@ -286,7 +286,7 @@ export default (hap: any) => {
         return;
       }
       if (!this.temp.updateTime) {
-        this.acState.updateTime = rightnow;
+        this.temp.updateTime = rightnow;
       }
 
       // Update the temperature
