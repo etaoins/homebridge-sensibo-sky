@@ -47,7 +47,7 @@ export default (hap: any) => {
     log: Logger;
 
     acState: AcState & { updateTime?: Date };
-    temp?: Measurement & { updateTime: Date };
+    roomMeasurement?: Measurement & { updateTime: Date };
     userState: UserState;
 
     /**
@@ -230,9 +230,9 @@ export default (hap: any) => {
 
     pollSensibo(): void {
       this.refreshAcState((newAcState) =>
-        this.refreshTemp((newTemp) => {
+        this.refreshRoomMeasurement((newMeasurement) => {
           // Only update our state if we have new information
-          if (newAcState || newTemp) {
+          if (newAcState || newMeasurement) {
             this.updateAcState({});
           }
         }),
@@ -271,11 +271,13 @@ export default (hap: any) => {
       );
     }
 
-    refreshTemp(callback: (newTemp?: Measurement) => void): void {
+    refreshRoomMeasurement(
+      callback: (newMeasurement?: Measurement) => void,
+    ): void {
       // This prevents this from running more often
       if (
-        this.temp &&
-        Date.now() - this.temp.updateTime.getTime() < tempTimeout
+        this.roomMeasurement &&
+        Date.now() - this.roomMeasurement.updateTime.getTime() < tempTimeout
       ) {
         callback();
         return;
@@ -286,24 +288,24 @@ export default (hap: any) => {
         this.deviceId,
         (data?: Measurement[]) => {
           if (data && data.length > 0) {
-            const newTemp = {
+            const newMeasurement = {
               temperature: data[0].temperature,
-              humidity: data[0].temperature,
+              humidity: data[0].humidity,
               updateTime: new Date(),
             };
 
             this.getService(Service.Thermostat).updateCharacteristic(
               Characteristic.CurrentTemperature,
-              newTemp.temperature,
+              newMeasurement.temperature,
             );
 
             this.getService(Service.HumiditySensor).updateCharacteristic(
               Characteristic.CurrentRelativeHumidity,
-              Math.round(newTemp.humidity),
+              Math.round(newMeasurement.humidity),
             );
 
-            this.temp = newTemp;
-            callback(newTemp);
+            this.roomMeasurement = newMeasurement;
+            callback(newMeasurement);
           } else {
             callback();
           }
@@ -494,11 +496,11 @@ export default (hap: any) => {
       if (masterSwitch === false) {
         newAcState.on = false;
       } else if (autoMode) {
-        if (this.temp) {
+        if (this.roomMeasurement) {
           newAcState = calculateDesiredAcState(
             this.log.bind(this),
             {
-              roomTemperature: this.temp.temperature,
+              roomMeasurement: this.roomMeasurement,
               heatingThresholdTemperature,
               coolingThresholdTemperature,
             },
@@ -546,7 +548,7 @@ export default (hap: any) => {
       if (acState.on) {
         this.log(
           'Changed status (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
-          this.temp?.temperature ?? 'unknown',
+          this.indoorMeasurement?.temperature ?? 'unknown',
           acState.mode,
           acState.targetTemperature,
           acState.fanLevel,
@@ -554,7 +556,7 @@ export default (hap: any) => {
       } else {
         this.log(
           'Changed status (roomTemp: %s, mode: off)',
-          this.temp?.temperature ?? 'unknown',
+          this.indoorMeasurement?.temperature ?? 'unknown',
         );
       }
     }

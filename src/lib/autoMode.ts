@@ -1,6 +1,7 @@
 import { Logger } from '../types/logger';
 
 import { AcState, FanLevel } from './acState';
+import { Measurement } from './measurement';
 import { SENSIBO_TEMPERATURE_RANGE, clampTemperature } from './temperature';
 
 function fanLevelForTemperatureDeviation(deviation: number): FanLevel {
@@ -14,7 +15,7 @@ function fanLevelForTemperatureDeviation(deviation: number): FanLevel {
 }
 
 interface AutoModeInput {
-  roomTemperature: number;
+  roomMeasurement: Measurement;
   heatingThresholdTemperature: number;
   coolingThresholdTemperature: number;
 }
@@ -22,15 +23,16 @@ interface AutoModeInput {
 export function calculateDesiredAcState(
   log: Logger,
   {
-    roomTemperature,
+    roomMeasurement,
     heatingThresholdTemperature,
     coolingThresholdTemperature,
   }: AutoModeInput,
   prevState: AcState,
 ): AcState {
   log(
-    'Calculating desired state (roomTemp: %s, mode: %s, heatingThresh %s, coolingThresh: %s)',
-    roomTemperature,
+    'Calculating desired state (roomTemp: %s, roomHumid: %s, mode: %s, heatingThresh %s, coolingThresh: %s)',
+    roomMeasurement.temperature,
+    roomMeasurement.humidity,
     prevState.on ? prevState.mode : 'off',
     heatingThresholdTemperature,
     coolingThresholdTemperature,
@@ -45,14 +47,14 @@ export function calculateDesiredAcState(
     SENSIBO_TEMPERATURE_RANGE,
   );
 
-  if (roomTemperature > coolingThresholdTemperature) {
+  if (roomMeasurement.temperature > coolingThresholdTemperature) {
     if (prevState.mode !== 'cool' || prevState.on !== true) {
       log('Hotter than cooling threshold, switching to cool mode');
     }
 
     nextState.mode = 'cool';
     nextState.fanLevel = fanLevelForTemperatureDeviation(
-      roomTemperature - coolingThresholdTemperature,
+      roomMeasurement.temperature - coolingThresholdTemperature,
     );
 
     nextState.targetTemperature = clampTemperature(
@@ -60,14 +62,14 @@ export function calculateDesiredAcState(
       SENSIBO_TEMPERATURE_RANGE,
     );
     nextState.on = true;
-  } else if (roomTemperature < heatingThresholdTemperature) {
+  } else if (roomMeasurement.temperature < heatingThresholdTemperature) {
     if (prevState.mode !== 'heat' || prevState.on !== true) {
       log('Colder than heating threshold, switching to hot mode');
     }
 
     nextState.mode = 'heat';
     nextState.fanLevel = fanLevelForTemperatureDeviation(
-      heatingThresholdTemperature - roomTemperature,
+      heatingThresholdTemperature - roomMeasurement.temperature,
     );
 
     nextState.targetTemperature = clampTemperature(
@@ -76,8 +78,10 @@ export function calculateDesiredAcState(
     );
     nextState.on = true;
   } else if (
-    (prevState.mode === 'heat' && roomTemperature > midPointTemperature) ||
-    (prevState.mode === 'cool' && roomTemperature < midPointTemperature)
+    (prevState.mode === 'heat' &&
+      roomMeasurement.temperature > midPointTemperature) ||
+    (prevState.mode === 'cool' &&
+      roomMeasurement.temperature < midPointTemperature)
   ) {
     if (prevState.on === true) {
       log('Crossed temperature mid-point, switching off');
