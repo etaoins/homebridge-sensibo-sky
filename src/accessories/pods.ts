@@ -32,7 +32,7 @@ function heatingCoolingStateForAcState(acState: AcState, characteristic: any) {
 }
 
 // Pod Accessory
-export default function (hap: any) {
+export default (hap: any) => {
   const { Service, Characteristic, Accessory, uuid } = hap;
 
   return class SensiboPodAccessory extends Accessory {
@@ -568,4 +568,4 @@ export default function (hap: any) {
       }
     }
   };
-}
+};

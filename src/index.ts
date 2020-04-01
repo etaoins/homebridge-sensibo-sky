@@ -49,7 +49,7 @@ export class SensiboPlatform {
   }
 }
 
-module.exports = function (homebridge: any) {
+module.exports = (homebridge: any) => {
   homebridge.registerPlatform(
     'homebridge-sensibo-sky',
     'SensiboSky',

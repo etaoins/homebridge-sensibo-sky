@@ -21,12 +21,12 @@ function _http(data: any, callback: (data: any) => void) {
   }
 
   let str: string | undefined = '';
-  const req = http.request(options, function (response) {
-    response.on('data', function (chunk) {
+  const req = http.request(options, (response) => {
+    response.on('data', (chunk) => {
       str += chunk;
     });
 
-    response.on('end', function () {
+    response.on('end', () => {
       try {
         if (typeof str === 'string') {
           str = JSON.parse(str);
@@ -41,9 +41,7 @@ function _http(data: any, callback: (data: any) => void) {
     });
   });
 
-  req.on('error', function () {
-    // console.log("[%s Sensibo API Debug] Error at req: %s - %s\n", new Date(),e.code.trim(),data.path);
-    // still need to response properly
+  req.on('error', () => {
     str = undefined;
     if (callback) {
       callback(str);
@@ -74,7 +72,7 @@ export class Sensibo {
   getPods(callback: (devices?: Device[]) => void) {
     get(
       { path: `users/me/pods?fields=id,room&apiKey=${this.apiKey}` },
-      function (data) {
+      (data) => {
         if (
           data &&
           data.status &&
@@ -96,7 +94,7 @@ export class Sensibo {
       {
         path: `pods/${deviceID}/acStates?fields=status,reason,acState&limit=10&apiKey=${this.apiKey}`,
       },
-      function (data) {
+      (data) => {
         if (
           data &&
           data.status &&
@@ -126,7 +124,7 @@ export class Sensibo {
       {
         path: `pods/${deviceID}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
       },
-      function (data) {
+      (data) => {
         if (
           data &&
           data.status &&
