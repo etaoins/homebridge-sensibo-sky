@@ -194,7 +194,6 @@ export default (hap: any) => {
       thermostatService
         .getCharacteristic(Characteristic.HeatingThresholdTemperature)
         .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
-        .updateValue(TARGET_TEMPERATURE_RANGE.minValue)
         .on('set', (value: any, callback: () => void) => {
           this.log(`Setting heating threshold: ${value}`);
 
@@ -213,7 +212,6 @@ export default (hap: any) => {
       thermostatService
         .getCharacteristic(Characteristic.CoolingThresholdTemperature)
         .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
-        .updateValue(TARGET_TEMPERATURE_RANGE.maxValue)
         .on('set', (value: any, callback: () => void) => {
           this.log(`Setting cooling threshold: ${value}`);
 
@@ -498,11 +496,7 @@ export default (hap: any) => {
 
       if (masterSwitch === false) {
         newAcState.on = false;
-      } else if (
-        autoMode &&
-        typeof coolingThresholdTemperature === 'number' &&
-        typeof heatingThresholdTemperature === 'number'
-      ) {
+      } else if (autoMode) {
         newAcState = calculateDesiredAcState(
           this.log.bind(this),
           {

@@ -1,20 +1,21 @@
 import fs from 'fs';
 import { Config } from './config';
+import { TARGET_TEMPERATURE_RANGE } from './temperature';
 
 export interface UserState {
   masterSwitch: boolean;
   autoMode: boolean;
-  heatingThresholdTemperature?: number;
+  heatingThresholdTemperature: number;
   targetTemperature?: number;
-  coolingThresholdTemperature?: number;
+  coolingThresholdTemperature: number;
 }
 
 export const DEFAULT_USER_STATE: UserState = {
   masterSwitch: true,
   autoMode: false,
-  heatingThresholdTemperature: undefined,
+  heatingThresholdTemperature: TARGET_TEMPERATURE_RANGE.minValue,
   targetTemperature: undefined,
-  coolingThresholdTemperature: undefined,
+  coolingThresholdTemperature: TARGET_TEMPERATURE_RANGE.maxValue,
 };
 
 function userStateFilename(
