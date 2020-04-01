@@ -16,7 +16,6 @@ function fanLevelForTemperatureDeviation(deviation: number): FanLevel {
 interface AutoModeInput {
   roomTemperature: number;
   heatingThresholdTemperature: number;
-  userTargetTemperature?: number;
   coolingThresholdTemperature: number;
 }
 
@@ -25,17 +24,15 @@ export function calculateDesiredAcState(
   {
     roomTemperature,
     heatingThresholdTemperature,
-    userTargetTemperature,
     coolingThresholdTemperature,
   }: AutoModeInput,
   prevState: AcState,
 ): AcState {
   log(
-    'Calculating desired state (roomTemp: %s, mode: %s, heatingThresh %s, userTarget: %s, coolingThresh: %s)',
+    'Calculating desired state (roomTemp: %s, mode: %s, heatingThresh %s, coolingThresh: %s)',
     roomTemperature,
     prevState.on ? prevState.mode : 'off',
     heatingThresholdTemperature,
-    userTargetTemperature,
     coolingThresholdTemperature,
   );
 
@@ -43,13 +40,10 @@ export function calculateDesiredAcState(
     ...prevState,
   };
 
-  const targetTemperature =
-    typeof userTargetTemperature === 'number'
-      ? userTargetTemperature
-      : clampTemperature(
-          (heatingThresholdTemperature + coolingThresholdTemperature) / 2,
-          SENSIBO_TEMPERATURE_RANGE,
-        );
+  const midPointTemperature = clampTemperature(
+    (heatingThresholdTemperature + coolingThresholdTemperature) / 2,
+    SENSIBO_TEMPERATURE_RANGE,
+  );
 
   if (roomTemperature > coolingThresholdTemperature) {
     if (prevState.mode !== 'cool' || prevState.on !== true) {
@@ -82,11 +76,11 @@ export function calculateDesiredAcState(
     );
     nextState.on = true;
   } else if (
-    (prevState.mode === 'heat' && roomTemperature > targetTemperature) ||
-    (prevState.mode === 'cool' && roomTemperature < targetTemperature)
+    (prevState.mode === 'heat' && roomTemperature > midPointTemperature) ||
+    (prevState.mode === 'cool' && roomTemperature < midPointTemperature)
   ) {
     if (prevState.on === true) {
-      log('Crossed temperature threshold, switching off');
+      log('Crossed temperature mid-point, switching off');
     }
 
     nextState.on = false;

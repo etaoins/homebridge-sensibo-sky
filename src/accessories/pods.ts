@@ -500,7 +500,6 @@ export default (hap: any) => {
             {
               roomTemperature: this.temp.temperature,
               heatingThresholdTemperature,
-              userTargetTemperature,
               coolingThresholdTemperature,
             },
             newAcState,

@@ -18,7 +18,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 21.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: false },
@@ -36,7 +35,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 18.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: false },
@@ -62,7 +60,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 17.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: true, mode: 'cool' },
@@ -88,7 +85,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 14.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: false },
@@ -114,7 +110,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 14.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: true, mode: 'heat' },
@@ -137,7 +132,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 26.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: false },
@@ -163,7 +157,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 28.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: true, mode: 'heat' },
@@ -189,7 +182,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 26.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: true, mode: 'cool' },
@@ -212,7 +204,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 22.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: true, mode: 'cool' },
@@ -233,7 +224,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 20.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: true, mode: 'heat' },
@@ -254,14 +244,13 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 20.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: true, mode: 'cool' },
     );
 
     expect(log).toBeCalledTimes(2);
-    expect(log).toBeCalledWith('Crossed temperature threshold, switching off');
+    expect(log).toBeCalledWith('Crossed temperature mid-point, switching off');
     expect(nextState).toMatchObject({
       mode: 'cool',
       on: false,
@@ -276,15 +265,13 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 22.0,
         heatingThresholdTemperature: 19.0,
-        // Omit `userTargetTemperature` to make sure we can derive it
-        userTargetTemperature: undefined,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: true, mode: 'heat' },
     );
 
     expect(log).toBeCalledTimes(2);
-    expect(log).toBeCalledWith('Crossed temperature threshold, switching off');
+    expect(log).toBeCalledWith('Crossed temperature mid-point, switching off');
     expect(nextState).toMatchObject({
       mode: 'heat',
       on: false,
@@ -299,7 +286,6 @@ describe('calculateDesiredAcState', () => {
       {
         roomTemperature: 22.0,
         heatingThresholdTemperature: 19.0,
-        userTargetTemperature: 21.0,
         coolingThresholdTemperature: 23.0,
       },
       { ...MOCK_AC_STATE, on: false, mode: 'heat' },
