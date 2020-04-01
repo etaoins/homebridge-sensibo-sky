@@ -29,9 +29,11 @@
     "format:prettier": "prettier --write 'src/**/*.ts'",
     "format:eslint": "eslint --fix 'src/**/*.ts'",
     "lint": "concurrently 'yarn lint:eslint' 'yarn lint:prettier'",
+    "test:build": "tsc --noEmit",
     "lint:prettier": "prettier --list-different 'src/**/*.ts'",
     "lint:eslint": "eslint 'src/**/*.ts'",
-    "test": "jest --collectCoverage"
+    "test:jest": "jest --collectCoverage",
+    "test": "concurrently 'yarn test:jest' 'yarn test:build'"
   },
   "dependencies": {},
   "devDependencies": {
