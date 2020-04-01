@@ -1,7 +1,19 @@
-const sensibo = require('./lib/sensiboapi');
+import sensibo from './lib/sensiboapi';
+import createSensiboPodAccessory from './accessories/pods';
+
+import type HAP from 'hap-nodejs';
+
 let SensiboPodAccessory;
 
 class SensiboPlatform {
+  apiKey: string;
+  apiDebug: boolean;
+  temperatureUnit: 'C' | 'F';
+  api: typeof sensibo;
+  log: Function;
+  debug: Function;
+  deviceLookup: HAP.Accessory[];
+
   constructor(log, config) {
     this.apiKey = config.apiKey;
     this.apiDebug = config.apiDebug;
@@ -9,15 +21,7 @@ class SensiboPlatform {
     this.api = sensibo;
     this.log = log;
     this.debug = log.debug;
-    this.deviceLookup = {};
-  }
-
-  reloadData(_callback) {
-    // This is called when we need to refresh all device information.
-    this.debug('Refreshing Sensibo Data');
-    for (let i = 0; i < this.deviceLookup.length; i++) {
-      this.deviceLookup[i].loadData();
-    }
+    this.deviceLookup = [];
   }
 
   accessories(callback) {
@@ -28,8 +32,6 @@ class SensiboPlatform {
 
     sensibo.init(this.apiKey);
     sensibo.getPods((devices) => {
-      // success
-
       if (devices != null) {
         for (let i = 0; i < devices.length; i++) {
           const device = devices[i];
@@ -55,13 +57,12 @@ class SensiboPlatform {
           'No senisbo devices return from Sensibo server ! Please check your APIkey.',
         );
       }
-      // refreshLoop();
     });
   }
 }
 
 module.exports = function (homebridge) {
-  SensiboPodAccessory = require('./accessories/pods')(homebridge.hap);
+  SensiboPodAccessory = createSensiboPodAccessory(homebridge.hap);
 
   homebridge.registerPlatform(
     'homebridge-sensibo-sky',
