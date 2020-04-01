@@ -1,4 +1,4 @@
-import http from 'https';
+import https from 'https';
 
 import { celciusToFahrenheit } from './temperature';
 import { AcState } from './acState';
@@ -25,8 +25,8 @@ function makeRequest(request: Request, callback: (data?: any) => void) {
     options.headers['Content-Type'] = 'application/json';
   }
 
-  let acc = '';
-  const req = http.request(options, (response) => {
+  const req = https.request(options, (response) => {
+    let acc = '';
     response.on('data', (chunk) => {
       acc += chunk;
     });
