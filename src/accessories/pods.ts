@@ -46,8 +46,8 @@ export default (hap: any) => {
     platform: SensiboPlatform;
     log: Logger;
 
-    acState: AcState & { updatetime?: Date };
-    temp: Measurement & { updatetime?: Date };
+    acState: AcState & { updateTime?: Date };
+    temp: Measurement & { updateTime?: Date };
     userState: UserState;
 
     constructor(platform: SensiboPlatform, device: Device) {
@@ -248,16 +248,16 @@ export default (hap: any) => {
       const rightnow = new Date();
 
       if (
-        this.acState.updatetime &&
-        rightnow.getTime() - this.acState.updatetime.getTime() < stateTimeout
+        this.acState.updateTime &&
+        rightnow.getTime() - this.acState.updateTime.getTime() < stateTimeout
       ) {
         if (callback) {
           callback();
         }
         return;
       }
-      if (!this.acState.updatetime) {
-        this.acState.updatetime = rightnow;
+      if (!this.acState.updateTime) {
+        this.acState.updateTime = rightnow;
       }
 
       // Update the state
@@ -277,16 +277,16 @@ export default (hap: any) => {
       const rightnow = new Date();
 
       if (
-        this.temp.updatetime &&
-        rightnow.getTime() - this.temp.updatetime.getTime() < tempTimeout
+        this.temp.updateTime &&
+        rightnow.getTime() - this.temp.updateTime.getTime() < tempTimeout
       ) {
         if (callback) {
           callback();
         }
         return;
       }
-      if (!this.temp.updatetime) {
-        this.acState.updatetime = rightnow;
+      if (!this.temp.updateTime) {
+        this.acState.updateTime = rightnow;
       }
 
       // Update the temperature
@@ -306,7 +306,7 @@ export default (hap: any) => {
               Math.round(this.temp.humidity),
             );
 
-            this.temp.updatetime = new Date(); // Set our last update time.
+            this.temp.updateTime = new Date(); // Set our last update time.
           }
           if (callback) {
             callback();
@@ -362,7 +362,7 @@ export default (hap: any) => {
       }
 
       this.acState.fanLevel = acState.fanLevel;
-      this.acState.updatetime = new Date(); // Set our last update time.
+      this.acState.updateTime = new Date(); // Set our last update time.
 
       if (!this.userState.autoMode) {
         this.userState.targetTemperature = this.acState.targetTemperature;
