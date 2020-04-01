@@ -1,6 +1,6 @@
 // This is homebridge's `lib/logger.js`
 
-export type LogFunction = (msg: string, ...params: any[]) => void;
+type LogFunction = (msg: string, ...params: any[]) => void;
 export type Level = 'debug' | 'info' | 'warn' | 'error';
 
 export interface Logger extends LogFunction {

@@ -1,6 +1,6 @@
 import sensibo from './lib/sensiboapi';
 import { Config } from './lib/config';
-import { Logger, LogFunction } from './types/logger';
+import { Logger } from './types/logger';
 import createSensiboPodAccessory from './accessories/pods';
 
 let SensiboPodAccessory: any;
@@ -9,13 +9,11 @@ export class SensiboPlatform {
   apiKey: string;
   sensibo: typeof sensibo;
   log: Logger;
-  debug: LogFunction;
 
   constructor(log: Logger, config: Config) {
     this.apiKey = config.apiKey;
     this.sensibo = sensibo;
     this.log = log;
-    this.debug = log.debug;
   }
 
   accessories(callback: (accessories: any[]) => void) {

@@ -1,7 +1,7 @@
 import { calculateDesiredAcState } from '../lib/autoMode';
 import { acStatesEquivalent, AcState } from '../lib/acState';
 import { Device } from '../lib/device';
-import { Logger, LogFunction } from '../types/logger';
+import { Logger } from '../types/logger';
 import { Measurement } from '../lib/measurement';
 import { userStatesEquivalent, UserState } from '../lib/userState';
 import {
@@ -36,12 +36,12 @@ export default function (hap: any) {
   const { Service, Characteristic, Accessory, uuid } = hap;
 
   return class SensiboPodAccessory extends Accessory {
-    acState: AcState & { updatetime?: Date };
     deviceGroup: string;
     deviceid: string;
     platform: SensiboPlatform;
     log: Logger;
-    debug: LogFunction;
+
+    acState: AcState & { updatetime?: Date };
     temp: {
       temperature: number;
       humidity: number;
@@ -58,7 +58,6 @@ export default function (hap: any) {
       this.name = device.room.name;
       this.platform = platform;
       this.log = platform.log;
-      this.debug = platform.debug;
 
       // HomeKit does really strange things since we have to wait on the data to get populated
       // This is just intro information. It will be corrected in a couple of seconds.
