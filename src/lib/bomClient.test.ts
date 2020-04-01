@@ -27,8 +27,8 @@ describe('intervalUntilNextObservation', () => {
     );
 
     // This should be between 34 and 36 minutes in the future
-    expect(interval).toBeGreaterThanOrEqual(34 * MINUTE_IN_MILLISECONDS);
-    expect(interval).toBeLessThanOrEqual(36 * MINUTE_IN_MILLISECONDS);
+    expect(interval).toBeGreaterThanOrEqual(34 * MINUTE_IN_MILLISECONDS - 1000);
+    expect(interval).toBeLessThanOrEqual(36 * MINUTE_IN_MILLISECONDS - 1000);
   });
 
   it('produces a sane value for the current time', () => {
