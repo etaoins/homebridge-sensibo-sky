@@ -1,16 +1,18 @@
-const { calculateDesiredAcState } = require('../lib/autoMode');
-const { acStatesEquivalent } = require('../lib/acState');
-const {
+import { calculateDesiredAcState } from '../lib/autoMode';
+import { acStatesEquivalent, AcState } from '../lib/acState';
+import { Measurement } from '../lib/measurement';
+import { UserState } from '../lib/userState';
+import {
   SENSIBO_TEMPERATURE_RANGE,
   TARGET_TEMPERATURE_RANGE,
   clampTemperature,
   fahrenheitToCelsius,
-} = require('../lib/temperature');
+} from '../lib/temperature';
 
 const stateTimeout = 30000; // in ms to min time elapse to call for refresh
 const tempTimeout = 10000; // in ms to min time elapse before next call for refresh
 
-function heatingCoolingStateForAcState(acState, characteristic) {
+function heatingCoolingStateForAcState(acState: AcState, characteristic: any) {
   if (acState.on === false) {
     return characteristic.OFF;
   }
@@ -27,17 +29,29 @@ function heatingCoolingStateForAcState(acState, characteristic) {
 }
 
 // Pod Accessory
-module.exports = function (hap) {
+export default function (hap: any) {
   const { Service, Characteristic, Accessory, uuid } = hap;
 
   return class SensiboPodAccessory extends Accessory {
-    constructor(platform, device) {
+    acState: AcState & { updatetime?: Date };
+    deviceGroup: string;
+    deviceid: string;
+    platform: any;
+    log: Function;
+    debug: Function;
+    temp: {
+      temperature: number;
+      humidity: number;
+      updatetime?: Date;
+    };
+    userState: UserState;
+
+    constructor(platform: any, device: any) {
       const id = uuid.generate(`hbdev:sensibo:pod:${device.id}`);
       super(device.room.name, id);
 
       this.deviceGroup = 'pods';
       this.deviceid = device.id;
-      this.name = device.room.name;
       this.platform = platform;
       this.log = platform.log;
       this.debug = platform.debug;
@@ -45,16 +59,16 @@ module.exports = function (hap) {
       // HomeKit does really strange things since we have to wait on the data to get populated
       // This is just intro information. It will be corrected in a couple of seconds.
       this.acState = {
-        temperatureUnit: device.temperatureUnit, // "C" or "F"
-        targetTemperature: undefined,
-        on: false, // true or false
-        mode: 'cool', // "heat", "cool", "fan" or "off"
-        fanLevel: 'auto', // "auto", "high", "medium" or "low"
+        temperatureUnit: device.temperatureUnit,
+        targetTemperature: 20,
+        on: false,
+        mode: 'cool',
+        fanLevel: 'auto',
       };
 
       this.temp = {
-        temperature: 20, // float
-        humidity: 0, // int
+        temperature: 20,
+        humidity: 0,
       };
 
       this.userState = {
@@ -87,7 +101,7 @@ module.exports = function (hap) {
       // Master switch
       this.addService(Service.Switch, 'Split Unit', 'Power')
         .getCharacteristic(Characteristic.On)
-        .on('set', (value, callback) => {
+        .on('set', (value: any, callback: () => void) => {
           if (value === this.userState.masterSwitch) {
             callback();
             return;
@@ -117,7 +131,7 @@ module.exports = function (hap) {
       // Target Heating/Cooling Mode characteristic
       thermostatService
         .getCharacteristic(Characteristic.TargetHeatingCoolingState)
-        .on('set', (value, callback) => {
+        .on('set', (value: any, callback: () => void) => {
           switch (value) {
             case Characteristic.TargetHeatingCoolingState.COOL:
               this.log('Setting target heating mode to cool');
@@ -164,7 +178,7 @@ module.exports = function (hap) {
       thermostatService
         .getCharacteristic(Characteristic.TargetTemperature)
         .setProps({ ...commonTemperatureProps, ...SENSIBO_TEMPERATURE_RANGE })
-        .on('set', (value, callback) => {
+        .on('set', (value: any, callback: () => void) => {
           this.log(`Setting target temperature: ${value}`);
 
           this.updateUserState(
@@ -183,7 +197,7 @@ module.exports = function (hap) {
         .getCharacteristic(Characteristic.HeatingThresholdTemperature)
         .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
         .updateValue(TARGET_TEMPERATURE_RANGE.minValue)
-        .on('set', (value, callback) => {
+        .on('set', (value: any, callback: () => void) => {
           this.log(`Setting heating threshold: ${value}`);
 
           this.updateUserState(
@@ -202,7 +216,7 @@ module.exports = function (hap) {
         .getCharacteristic(Characteristic.CoolingThresholdTemperature)
         .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
         .updateValue(TARGET_TEMPERATURE_RANGE.maxValue)
-        .on('set', (value, callback) => {
+        .on('set', (value: any, callback: () => void) => {
           this.log(`Setting cooling threshold: ${value}`);
 
           this.updateUserState(
@@ -223,17 +237,17 @@ module.exports = function (hap) {
       setInterval(this.loadData.bind(this), 30000);
     }
 
-    loadData(callback) {
+    loadData(callback?: () => void): void {
       this.refreshState(() =>
         this.refreshTemperature(() => this.updateAcState({}, callback)),
       );
     }
 
-    getServices() {
+    getServices(): any[] {
       return this.services;
     }
 
-    refreshState(callback) {
+    refreshState(callback?: () => void): void {
       // This prevents this from running more often
       const rightnow = new Date();
 
@@ -251,7 +265,7 @@ module.exports = function (hap) {
       }
 
       // Update the state
-      this.platform.api.getState(this.deviceid, (acState) => {
+      this.platform.api.getState(this.deviceid, (acState: AcState) => {
         if (acState) {
           this.applyServerState(acState);
 
@@ -262,7 +276,7 @@ module.exports = function (hap) {
       });
     }
 
-    refreshTemperature(callback) {
+    refreshTemperature(callback?: () => void): void {
       // This prevents this from running more often
       const rightnow = new Date();
 
@@ -280,33 +294,36 @@ module.exports = function (hap) {
       }
 
       // Update the temperature
-      this.platform.api.getMeasurements(this.deviceid, (data) => {
-        if (data && data.length > 0) {
-          this.temp.temperature = data[0].temperature;
-          this.getService(Service.Thermostat).updateCharacteristic(
-            Characteristic.CurrentTemperature,
-            this.temp.temperature,
-          );
+      this.platform.api.getMeasurements(
+        this.deviceid,
+        (data?: Measurement[]) => {
+          if (data && data.length > 0) {
+            this.temp.temperature = data[0].temperature;
+            this.getService(Service.Thermostat).updateCharacteristic(
+              Characteristic.CurrentTemperature,
+              this.temp.temperature,
+            );
 
-          this.temp.humidity = data[0].humidity;
-          this.getService(Service.HumiditySensor).updateCharacteristic(
-            Characteristic.CurrentRelativeHumidity,
-            Math.round(this.temp.humidity),
-          );
+            this.temp.humidity = data[0].humidity;
+            this.getService(Service.HumiditySensor).updateCharacteristic(
+              Characteristic.CurrentRelativeHumidity,
+              Math.round(this.temp.humidity),
+            );
 
-          this.temp.updatetime = new Date(); // Set our last update time.
-        }
-        if (callback) {
-          callback();
-        }
-      });
+            this.temp.updatetime = new Date(); // Set our last update time.
+          }
+          if (callback) {
+            callback();
+          }
+        },
+      );
     }
 
-    identify() {
+    identify(): void {
       this.log('Identify! (name: %s)', this.name);
     }
 
-    applyServerState(acState) {
+    applyServerState(acState: AcState): void {
       this.acState.temperatureUnit = acState.temperatureUnit;
 
       const newTargetTemperature =
@@ -358,7 +375,7 @@ module.exports = function (hap) {
       this.updateCharacteristicsFromAcState(acState, this.userState);
     }
 
-    updateCharacteristicsForAutoMode(userState) {
+    updateCharacteristicsForAutoMode(userState: UserState): void {
       const masterSwitchService = this.getService(Service.Switch);
       masterSwitchService.updateCharacteristic(
         Characteristic.On,
@@ -378,7 +395,10 @@ module.exports = function (hap) {
       );
     }
 
-    updateCharacteristicsForManualMode(acState, userState) {
+    updateCharacteristicsForManualMode(
+      acState: AcState,
+      userState: UserState,
+    ): void {
       const masterSwitchService = this.getService(Service.Switch);
       masterSwitchService.updateCharacteristic(
         Characteristic.On,
@@ -401,7 +421,10 @@ module.exports = function (hap) {
       );
     }
 
-    updateCharacteristicsFromAcState(acState, userState) {
+    updateCharacteristicsFromAcState(
+      acState: AcState,
+      userState: UserState,
+    ): void {
       const thermostatService = this.getService(Service.Thermostat);
 
       // Current heating/cooling state
@@ -427,7 +450,10 @@ module.exports = function (hap) {
       }
     }
 
-    updateUserState(stateDelta, callback) {
+    updateUserState(
+      stateDelta: Partial<UserState>,
+      callback?: () => void,
+    ): void {
       const newUserState = {
         ...this.userState,
         ...stateDelta,
@@ -448,7 +474,7 @@ module.exports = function (hap) {
       }
     }
 
-    updateAcState(stateDelta, callback) {
+    updateAcState(stateDelta: Partial<AcState>, callback?: () => void): void {
       const {
         autoMode,
         masterSwitch,
@@ -496,7 +522,7 @@ module.exports = function (hap) {
       }
 
       this.acState = newAcState;
-      this.platform.api.submitState(this.deviceid, newAcState, (data) => {
+      this.platform.api.submitState(this.deviceid, newAcState, (data: any) => {
         if (data && data.result && data.result.status === 'Success') {
           const { acState } = data.result;
 
@@ -514,7 +540,7 @@ module.exports = function (hap) {
       });
     }
 
-    logStateChange() {
+    logStateChange(): void {
       if (this.acState.on) {
         this.log(
           'Changed status (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
@@ -531,4 +557,4 @@ module.exports = function (hap) {
       }
     }
   };
-};
+}

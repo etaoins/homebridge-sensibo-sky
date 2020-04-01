@@ -1,9 +1,7 @@
 import sensibo from './lib/sensiboapi';
 import createSensiboPodAccessory from './accessories/pods';
 
-import type HAP from 'hap-nodejs';
-
-let SensiboPodAccessory;
+let SensiboPodAccessory: any;
 
 class SensiboPlatform {
   apiKey: string;
@@ -12,9 +10,9 @@ class SensiboPlatform {
   api: typeof sensibo;
   log: Function;
   debug: Function;
-  deviceLookup: HAP.Accessory[];
+  deviceLookup: any[];
 
-  constructor(log, config) {
+  constructor(log: any, config: any) {
     this.apiKey = config.apiKey;
     this.apiDebug = config.apiDebug;
     this.temperatureUnit = config.temperatureUnit;
@@ -24,10 +22,10 @@ class SensiboPlatform {
     this.deviceLookup = [];
   }
 
-  accessories(callback) {
+  accessories(callback: (accessories: any[]) => void) {
     this.log('Fetching Sensibo devices...');
 
-    const foundAccessories = [];
+    const foundAccessories: any[] = [];
     this.deviceLookup = [];
 
     sensibo.init(this.apiKey);
@@ -61,7 +59,7 @@ class SensiboPlatform {
   }
 }
 
-module.exports = function (homebridge) {
+module.exports = function (homebridge: any) {
   SensiboPodAccessory = createSensiboPodAccessory(homebridge.hap);
 
   homebridge.registerPlatform(

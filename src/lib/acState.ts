@@ -1,8 +1,11 @@
+export type AcMode = 'heat' | 'cool' | 'fan';
+export type FanLevel = 'auto' | 'low' | 'medium' | 'high';
+
 export interface AcState {
   on: boolean;
   targetTemperature: number;
-  mode: 'heat' | 'cool';
-  fanLevel: 'auto' | 'low' | 'medium' | 'high';
+  mode: AcMode;
+  fanLevel: FanLevel;
   temperatureUnit: 'F' | 'C';
 }
 

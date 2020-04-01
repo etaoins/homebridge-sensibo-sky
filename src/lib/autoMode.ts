@@ -1,7 +1,7 @@
-import { AcState } from './acState';
+import { AcState, FanLevel } from './acState';
 import { SENSIBO_TEMPERATURE_RANGE, clampTemperature } from './temperature';
 
-function fanLevelForTemperatureDeviation(deviation) {
+function fanLevelForTemperatureDeviation(deviation: number): FanLevel {
   if (deviation > 4.0) {
     return 'high';
   } else if (deviation > 1.0) {
@@ -13,13 +13,13 @@ function fanLevelForTemperatureDeviation(deviation) {
 
 interface AutoModeInput {
   roomTemperature: number;
-  heatingThresholdTemperature?: number;
+  heatingThresholdTemperature: number;
   userTargetTemperature?: number;
-  coolingThresholdTemperature?: number;
+  coolingThresholdTemperature: number;
 }
 
 export function calculateDesiredAcState(
-  log,
+  log: Function,
   {
     roomTemperature,
     heatingThresholdTemperature,

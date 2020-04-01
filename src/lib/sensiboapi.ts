@@ -3,13 +3,13 @@ import http from 'https';
 import { celciusToFahrenheit } from './temperature';
 import { AcState } from './acState';
 
-function _http(data, callback) {
+function _http(data: any, callback: (data: any) => void) {
   const options = {
     hostname: 'home.sensibo.com',
     port: 443,
     path: `/api/v2/${data.path}`,
     method: data.method,
-    headers: {},
+    headers: {} as Record<string, any>,
   };
 
   // console.log(options.path);
@@ -19,7 +19,7 @@ function _http(data, callback) {
     options.headers['Content-Type'] = 'application/json';
   }
 
-  let str = '';
+  let str: string | undefined = '';
   const req = http.request(options, function (response) {
     response.on('data', function (chunk) {
       str += chunk;
@@ -27,7 +27,9 @@ function _http(data, callback) {
 
     response.on('end', function () {
       try {
-        str = JSON.parse(str);
+        if (typeof str === 'string') {
+          str = JSON.parse(str);
+        }
       } catch (e) {
         str = undefined;
       }
@@ -55,12 +57,12 @@ function _http(data, callback) {
   req.end();
 }
 
-function post(data, callback) {
+function post(data: any, callback: (data: any) => void) {
   data.method = 'POST';
   _http(data, callback);
 }
 
-function get(data, callback) {
+function get(data: any, callback: (data: any) => void) {
   data.method = 'GET';
   _http(data, callback);
 }
@@ -72,7 +74,7 @@ class Sensibo {
     this.apiKey = inKey;
   }
 
-  getPods(callback) {
+  getPods(callback: (data: any) => void) {
     get(
       { path: `users/me/pods?fields=id,room&apiKey=${this.apiKey}` },
       function (data) {
@@ -85,7 +87,7 @@ class Sensibo {
         ) {
           callback(data.result);
         } else {
-          callback();
+          callback(undefined);
         }
       },
     );
@@ -122,7 +124,7 @@ class Sensibo {
     );
   }
 
-  getMeasurements(deviceID: string, callback) {
+  getMeasurements(deviceID: string, callback: (data?: any[]) => void) {
     get(
       {
         path: `pods/${deviceID}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
@@ -137,13 +139,13 @@ class Sensibo {
         ) {
           callback(data.result);
         } else {
-          callback();
+          callback(undefined);
         }
       },
     );
   }
 
-  submitState(deviceID: string, state: AcState, callback) {
+  submitState(deviceID: string, state: AcState, callback: (data: any) => void) {
     const data = {
       data: {
         acState: {
