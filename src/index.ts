@@ -10,21 +10,18 @@ export class SensiboPlatform {
   sensibo: typeof sensibo;
   log: Logger;
   debug: LogFunction;
-  deviceLookup: any[];
 
   constructor(log: Logger, config: Config) {
     this.apiKey = config.apiKey;
     this.sensibo = sensibo;
     this.log = log;
     this.debug = log.debug;
-    this.deviceLookup = [];
   }
 
   accessories(callback: (accessories: any[]) => void) {
     this.log('Fetching Sensibo devices...');
 
     const foundAccessories: any[] = [];
-    this.deviceLookup = [];
 
     sensibo.init(this.apiKey);
     sensibo.getPods((devices) => {
@@ -41,7 +38,6 @@ export class SensiboPlatform {
               accessory.deviceid,
               accessory.deviceGroup,
             );
-            this.deviceLookup.push(accessory);
             foundAccessories.push(accessory);
           }
         }
