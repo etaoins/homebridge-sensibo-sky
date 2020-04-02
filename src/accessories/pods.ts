@@ -8,6 +8,10 @@ import { Device } from '../lib/device';
 import { Logger } from '../types/logger';
 import { Measurement } from '../lib/measurement';
 import {
+  MEASUREMENT_INTERVAL_SECS,
+  SensiboMeasurement,
+} from '../lib/sensiboClient';
+import {
   saveUserState,
   restoreUserState,
   userStatesEquivalent,
@@ -239,14 +243,7 @@ export default (hap: any) => {
         this.updateCharacteristicsForAutoMode(this.userState);
       }
 
-      this.pollSensibo();
-      global.setInterval(() => {
-        this.pollSensibo().catch((err) => {
-          this.log.warn(err.message);
-        });
-
-        return;
-      }, 30_000);
+      this.pollSensibo().catch((err) => this.log.warn(err));
 
       const { bomObservationsUrl } = this.platform.config;
       if (bomObservationsUrl) {
@@ -291,6 +288,18 @@ export default (hap: any) => {
       if (newAcState || newMeasurement) {
         await this.updateAcState({});
       }
+
+      const nextRefresh =
+        (MEASUREMENT_INTERVAL_SECS -
+          (newMeasurement?.time.secondsAgo ?? 0) +
+          1) *
+        1000;
+
+      global.setTimeout(() => {
+        this.pollSensibo().catch((err) => {
+          this.log.warn(err.message);
+        });
+      }, nextRefresh);
     }
 
     private async refreshAcState(): Promise<AcState | undefined> {
@@ -306,7 +315,9 @@ export default (hap: any) => {
       return serverAcState;
     }
 
-    private async refreshRoomMeasurement(): Promise<Measurement | undefined> {
+    private async refreshRoomMeasurement(): Promise<
+      SensiboMeasurement | undefined
+    > {
       // Update the temperature
       const measurements = await this.platform.sensiboClient.getMeasurements(
         this.deviceId,
@@ -316,10 +327,7 @@ export default (hap: any) => {
         return;
       }
 
-      const newMeasurement = {
-        temperature: measurements[0].temperature,
-        humidity: measurements[0].humidity,
-      };
+      const [newMeasurement] = measurements;
 
       this.getService(Service.Thermostat).updateCharacteristic(
         Characteristic.CurrentTemperature,
@@ -331,7 +339,11 @@ export default (hap: any) => {
         Math.round(newMeasurement.humidity),
       );
 
-      this.roomMeasurement = newMeasurement;
+      this.roomMeasurement = {
+        temperature: newMeasurement.temperature,
+        humidity: newMeasurement.humidity,
+      };
+
       return newMeasurement;
     }
 
@@ -483,7 +495,6 @@ export default (hap: any) => {
 
       this.userStateApplyTimeout = global.setTimeout(() => {
         this.updateAcState({});
-        return;
       }, 500);
 
       saveUserState(
