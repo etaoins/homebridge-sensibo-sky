@@ -101,8 +101,8 @@ export default (hap: any) => {
         `Pod ID: ${this.deviceId}`,
       );
 
-      // Master switch
-      this.addService(Service.Switch, 'Split Unit', 'Power')
+      // Blower Fan
+      this.addService(Service.Fan, 'Blower Fan', 'BlowerFan')
         .getCharacteristic(Characteristic.On)
         .on('set', (value: any, callback: () => void) => {
           if (value && !this.userState.masterSwitch) {
@@ -410,8 +410,7 @@ export default (hap: any) => {
     }
 
     updateCharacteristicsForAutoMode(userState: UserState): void {
-      const masterSwitchService = this.getService(Service.Switch);
-      masterSwitchService.updateCharacteristic(
+      this.getService(Service.Fan).updateCharacteristic(
         Characteristic.On,
         userState.masterSwitch,
       );
@@ -433,8 +432,7 @@ export default (hap: any) => {
       acState: AcState,
       userState: UserState,
     ): void {
-      const masterSwitchService = this.getService(Service.Switch);
-      masterSwitchService.updateCharacteristic(
+      this.getService(Service.Fan).updateCharacteristic(
         Characteristic.On,
         userState.masterSwitch && acState.on,
       );
@@ -549,12 +547,11 @@ export default (hap: any) => {
           );
         }
       } else {
+        newAcState.on = true;
         newAcState.fanLevel = 'auto';
         if (typeof userTargetTemperature === 'number') {
           newAcState.targetTemperature = userTargetTemperature;
         }
-
-        newAcState.on = masterSwitch;
       }
 
       if (acStatesEquivalent(this.acState, newAcState)) {
