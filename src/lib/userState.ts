@@ -79,10 +79,10 @@ export const saveUserState = (
     }
   });
 
-export function userStatesEquivalent(
+export const userStatesEquivalent = (
   left: UserState,
   right: UserState,
-): boolean {
+): boolean => {
   for (const propName of [
     'masterSwitch',
     'autoMode',
@@ -108,4 +108,4 @@ export function userStatesEquivalent(
   }
 
   return true;
-}
+};
