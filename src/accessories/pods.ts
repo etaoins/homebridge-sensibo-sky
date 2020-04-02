@@ -550,19 +550,18 @@ export default (hap: any) => {
     }
 
     private logStateChange(acState: AcState): void {
+      const roomTemp = this.roomMeasurement?.temperature ?? 'unknown';
+
       if (acState.on) {
         this.log(
-          'Changed status (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
-          this.roomMeasurement?.temperature ?? 'unknown',
+          'Changed AC state (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
+          roomTemp,
           acState.mode,
           acState.targetTemperature,
           acState.fanLevel,
         );
       } else {
-        this.log(
-          'Changed status (roomTemp: %s, mode: off)',
-          this.roomMeasurement?.temperature ?? 'unknown',
-        );
+        this.log('Changed AC state (roomTemp: %s, mode: off)', roomTemp);
       }
     }
   };
