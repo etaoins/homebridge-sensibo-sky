@@ -18,10 +18,10 @@ export const DEFAULT_USER_STATE: UserState = {
   coolingThresholdTemperature: TARGET_TEMPERATURE_RANGE.maxValue,
 };
 
-function userStateFilename(
+const userStateFilename = (
   config: Pick<Config, 'userStateDirectory'>,
   deviceId: string,
-): string | undefined {
+): string | undefined => {
   if (!config.userStateDirectory) {
     return;
   }
@@ -32,12 +32,12 @@ function userStateFilename(
   }
 
   return `${config.userStateDirectory}/SensiboUserState.${deviceId}.json`;
-}
+};
 
-export function restoreUserState(
+export const restoreUserState = (
   config: Pick<Config, 'userStateDirectory'>,
   deviceId: string,
-): UserState {
+): UserState => {
   const filename = userStateFilename(config, deviceId);
   if (!filename) {
     return DEFAULT_USER_STATE;
@@ -53,26 +53,31 @@ export function restoreUserState(
   } catch {
     return DEFAULT_USER_STATE;
   }
-}
+};
 
 // istanbul ignore next
-export function saveUserState(
+export const saveUserState = (
   config: Pick<Config, 'userStateDirectory'>,
   deviceId: string,
   userState: UserState,
-) {
-  const filename = userStateFilename(config, deviceId);
-  if (!filename) {
-    return;
-  }
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const filename = userStateFilename(config, deviceId);
+    if (!filename) {
+      resolve();
+      return;
+    }
 
-  try {
-    // eslint-disable-next-line no-sync
-    fs.writeFileSync(filename, JSON.stringify(userState, null, 2), {
-      encoding: 'utf8',
-    });
-  } catch {}
-}
+    try {
+      const fileContent = JSON.stringify(userState, null, 2);
+
+      fs.writeFile(filename, fileContent, { encoding: 'utf8' }, (err) =>
+        err ? reject(err) : resolve(),
+      );
+    } catch (err) {
+      reject(err);
+    }
+  });
 
 export function userStatesEquivalent(
   left: UserState,

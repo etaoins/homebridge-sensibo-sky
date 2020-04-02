@@ -22,11 +22,11 @@ interface AutoModeInput {
   coolingThresholdTemperature: number;
 }
 
-export function calculateDesiredAcState(
+export const calculateDesiredAcState = (
   log: Logger,
   input: AutoModeInput,
   prevState: AcState,
-): AcState {
+): AcState => {
   const {
     roomMeasurement,
     outdoorMeasurement,
@@ -112,4 +112,4 @@ export function calculateDesiredAcState(
   }
 
   return nextState;
-}
+};

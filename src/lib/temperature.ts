@@ -18,18 +18,16 @@ export const TARGET_TEMPERATURE_RANGE: TemperatureRange = {
   minStep: 0.5,
 };
 
-export function fahrenheitToCelsius(value: number): number {
-  return (value - 32) / 1.8;
-}
+export const fahrenheitToCelsius = (value: number): number =>
+  (value - 32) / 1.8;
 
-export function celciusToFahrenheit(value: number): number {
-  return Math.round(value * 1.8 + 32);
-}
+export const celciusToFahrenheit = (value: number): number =>
+  Math.round(value * 1.8 + 32);
 
-export function clampTemperature(
+export const clampTemperature = (
   value: number,
   range: TemperatureRange,
-): number {
+): number => {
   if (value <= range.minValue) {
     return range.minValue;
   } else if (value >= range.maxValue) {
@@ -37,4 +35,4 @@ export function clampTemperature(
   }
 
   return range.minStep >= 1.0 ? Math.round(value) : value;
-}
+};

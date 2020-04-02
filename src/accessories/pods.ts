@@ -45,15 +45,16 @@ export default (hap: any) => {
   const { Service, Characteristic, Accessory, uuid } = hap;
 
   return class SensiboPodAccessory extends Accessory {
-    deviceGroup: string;
-    deviceId: string;
-    platform: SensiboPlatform;
-    log: Logger;
+    static deviceGroup = 'pods';
+    public deviceId: string;
 
-    acState: AcState & { updateTime?: Date };
-    roomMeasurement?: Measurement & { updateTime: Date };
-    outdoorMeasurement?: Measurement;
-    userState: UserState;
+    private platform: SensiboPlatform;
+    private log: Logger;
+
+    private acState: AcState & { updateTime?: Date };
+    private roomMeasurement?: Measurement & { updateTime: Date };
+    private outdoorMeasurement?: Measurement;
+    private userState: UserState;
 
     /**
      * Timeout for debouncing user state changes
@@ -64,7 +65,6 @@ export default (hap: any) => {
       const id = uuid.generate(`hbdev:sensibo:pod:${device.id}`);
       super(device.room.name, id);
 
-      this.deviceGroup = 'pods';
       this.deviceId = device.id;
       this.name = device.room.name;
       this.platform = platform;
@@ -131,26 +131,30 @@ export default (hap: any) => {
       // Target Heating/Cooling Mode characteristic
       thermostatService
         .getCharacteristic(Characteristic.TargetHeatingCoolingState)
-        .on('set', (value: any, callback: () => void) => {
+        .on('set', (value: any, callback: (err: any) => void) => {
           switch (value) {
             case Characteristic.TargetHeatingCoolingState.COOL:
               this.log('Setting target heating mode to cool');
 
               this.updateUserState({ autoMode: false });
-              this.updateAcState({ on: true, mode: 'cool' }, callback);
+              this.updateAcState({ on: true, mode: 'cool' })
+                .then(callback)
+                .catch(callback);
 
               break;
             case Characteristic.TargetHeatingCoolingState.HEAT:
               this.log('Setting target heating mode to heat');
 
               this.updateUserState({ autoMode: false });
-              this.updateAcState({ on: true, mode: 'heat' }, callback);
+              this.updateAcState({ on: true, mode: 'heat' })
+                .then(callback)
+                .catch(callback);
 
               break;
             case Characteristic.TargetHeatingCoolingState.AUTO:
               this.log('Setting target heating mode to auto');
               this.updateUserState({ autoMode: true });
-              callback();
+              callback(undefined);
 
               break;
 
@@ -159,7 +163,9 @@ export default (hap: any) => {
               this.log('Setting target heating mode to off');
 
               this.updateUserState({ autoMode: false });
-              this.updateAcState({ mode: 'fan' }, callback);
+              this.updateAcState({ mode: 'fan' })
+                .then(callback)
+                .catch(callback);
 
               break;
           }
@@ -237,53 +243,60 @@ export default (hap: any) => {
       }
 
       this.pollSensibo();
-      global.setInterval(this.pollSensibo.bind(this), 30000);
+      global.setInterval(() => {
+        this.pollSensibo().catch((err) => {
+          this.log.warn(err.message);
+        });
+
+        return;
+      }, 30_000);
 
       const { bomObservationsUrl } = this.platform.config;
       if (bomObservationsUrl) {
-        const refreshOutdoorMeasurement = () => {
+        const refreshOutdoorMeasurement = async (): Promise<void> => {
           const resetTimer = () => {
-            global.setTimeout(
-              refreshOutdoorMeasurement,
-              intervalUntilNextObservation(),
-            );
+            global.setTimeout(() => {
+              refreshOutdoorMeasurement();
+              return;
+            }, intervalUntilNextObservation());
           };
 
-          getOutdoorMeasurement(bomObservationsUrl)
-            .then((measurement) => {
-              this.outdoorMeasurement = measurement;
-              this.log(
-                `Retrieved BOM observation (outdoorTemp: ${measurement.temperature}, outdoorHumid: ${measurement.humidity})`,
-              );
-              resetTimer();
-            })
-            .catch(() => {
-              this.log('Error retrieving BOM observation');
-              resetTimer();
-            });
-          return;
+          try {
+            const measurement = await getOutdoorMeasurement(bomObservationsUrl);
+
+            this.outdoorMeasurement = measurement;
+            this.log(
+              `Retrieved BOM observation (outdoorTemp: ${measurement.temperature}, outdoorHumid: ${measurement.humidity})`,
+            );
+          } catch (err) {
+            this.log.warn(err);
+            resetTimer();
+          }
         };
 
         refreshOutdoorMeasurement();
       }
     }
 
-    pollSensibo(): void {
-      this.refreshAcState((newAcState) =>
-        this.refreshRoomMeasurement((newMeasurement) => {
-          // Only update our state if we have new information
-          if (newAcState || newMeasurement) {
-            this.updateAcState({});
-          }
-        }),
-      );
-    }
-
     getServices(): any[] {
       return this.services;
     }
 
-    refreshAcState(callback: (newState?: AcState) => void): void {
+    identify(): void {
+      this.log('Identify! (name: %s)', this.name);
+    }
+
+    private async pollSensibo(): Promise<void> {
+      const newAcState = await this.refreshAcState();
+      const newMeasurement = await this.refreshRoomMeasurement();
+
+      // Only update our state if we have new information
+      if (newAcState || newMeasurement) {
+        await this.updateAcState({});
+      }
+    }
+
+    private async refreshAcState(): Promise<AcState | undefined> {
       // This prevents this from running more often
       const rightnow = new Date();
 
@@ -291,73 +304,64 @@ export default (hap: any) => {
         this.acState.updateTime &&
         rightnow.getTime() - this.acState.updateTime.getTime() < stateTimeout
       ) {
-        callback();
         return;
       }
+
       if (!this.acState.updateTime) {
         this.acState.updateTime = rightnow;
       }
 
-      // Update the state
-      this.platform.sensiboClient.getState(
+      // Fetch the server state
+      const serverAcState = await this.platform.sensiboClient.getState(
         this.deviceId,
-        (acState?: AcState) => {
-          if (acState) {
-            this.applyServerState(acState);
-          }
-
-          callback(acState);
-        },
       );
+
+      if (serverAcState) {
+        this.applyServerState(serverAcState);
+      }
+
+      return serverAcState;
     }
 
-    refreshRoomMeasurement(
-      callback: (newMeasurement?: Measurement) => void,
-    ): void {
+    private async refreshRoomMeasurement(): Promise<Measurement | undefined> {
       // This prevents this from running more often
       if (
         this.roomMeasurement &&
         Date.now() - this.roomMeasurement.updateTime.getTime() < tempTimeout
       ) {
-        callback();
         return;
       }
 
       // Update the temperature
-      this.platform.sensiboClient.getMeasurements(
+      const measurements = await this.platform.sensiboClient.getMeasurements(
         this.deviceId,
-        (data?: Measurement[]) => {
-          if (data && data.length > 0) {
-            const newMeasurement = {
-              temperature: data[0].temperature,
-              humidity: data[0].humidity,
-              updateTime: new Date(),
-            };
-
-            this.getService(Service.Thermostat).updateCharacteristic(
-              Characteristic.CurrentTemperature,
-              newMeasurement.temperature,
-            );
-
-            this.getService(Service.HumiditySensor).updateCharacteristic(
-              Characteristic.CurrentRelativeHumidity,
-              Math.round(newMeasurement.humidity),
-            );
-
-            this.roomMeasurement = newMeasurement;
-            callback(newMeasurement);
-          } else {
-            callback();
-          }
-        },
       );
+
+      if (measurements.length === 0) {
+        return;
+      }
+
+      const newMeasurement = {
+        temperature: measurements[0].temperature,
+        humidity: measurements[0].humidity,
+        updateTime: new Date(),
+      };
+
+      this.getService(Service.Thermostat).updateCharacteristic(
+        Characteristic.CurrentTemperature,
+        newMeasurement.temperature,
+      );
+
+      this.getService(Service.HumiditySensor).updateCharacteristic(
+        Characteristic.CurrentRelativeHumidity,
+        Math.round(newMeasurement.humidity),
+      );
+
+      this.roomMeasurement = newMeasurement;
+      return newMeasurement;
     }
 
-    identify(): void {
-      this.log('Identify! (name: %s)', this.name);
-    }
-
-    applyServerState(acState: AcState): void {
+    private applyServerState(acState: AcState): void {
       this.acState.temperatureUnit = acState.temperatureUnit;
 
       const newTargetTemperature =
@@ -409,7 +413,7 @@ export default (hap: any) => {
       this.updateCharacteristicsFromAcState(acState, this.userState);
     }
 
-    updateCharacteristicsForAutoMode(userState: UserState): void {
+    private updateCharacteristicsForAutoMode(userState: UserState): void {
       this.getService(Service.Fan).updateCharacteristic(
         Characteristic.On,
         userState.masterSwitch,
@@ -428,7 +432,7 @@ export default (hap: any) => {
       );
     }
 
-    updateCharacteristicsForManualMode(
+    private updateCharacteristicsForManualMode(
       acState: AcState,
       userState: UserState,
     ): void {
@@ -453,7 +457,7 @@ export default (hap: any) => {
       );
     }
 
-    updateCharacteristicsFromAcState(
+    private updateCharacteristicsFromAcState(
       acState: AcState,
       userState: UserState,
     ): void {
@@ -482,7 +486,7 @@ export default (hap: any) => {
       }
     }
 
-    updateUserState(stateDelta: Partial<UserState>): void {
+    private updateUserState(stateDelta: Partial<UserState>): void {
       const newUserState: UserState = {
         ...this.userState,
         ...stateDelta,
@@ -504,15 +508,19 @@ export default (hap: any) => {
         global.clearTimeout(this.userStateApplyTimeout);
       }
 
-      this.userStateApplyTimeout = global.setTimeout(
-        () => this.updateAcState({}),
-        500,
-      );
+      this.userStateApplyTimeout = global.setTimeout(() => {
+        this.updateAcState({});
+        return;
+      }, 500);
 
-      saveUserState(this.platform.config, this.deviceId, newUserState);
+      saveUserState(
+        this.platform.config,
+        this.deviceId,
+        newUserState,
+      ).catch((err) => this.log.warn(`Error saving state: ${err}`));
     }
 
-    updateAcState(stateDelta: Partial<AcState>, callback?: () => void): void {
+    private async updateAcState(stateDelta: Partial<AcState>): Promise<void> {
       if (this.userStateApplyTimeout) {
         global.clearInterval(this.userStateApplyTimeout);
         this.userStateApplyTimeout = undefined;
@@ -555,34 +563,20 @@ export default (hap: any) => {
       }
 
       if (acStatesEquivalent(this.acState, newAcState)) {
-        if (callback) {
-          callback();
-        }
         return;
       }
 
       this.acState = newAcState;
-      this.platform.sensiboClient.submitState(
+      const serverAcState = await this.platform.sensiboClient.submitState(
         this.deviceId,
         newAcState,
-        (data: any) => {
-          if (data?.result.status === 'Success') {
-            const { acState } = data.result;
-
-            this.logStateChange(acState);
-            this.applyServerState(acState);
-          } else {
-            this.log('Error setting state');
-          }
-
-          if (callback) {
-            callback();
-          }
-        },
       );
+
+      this.logStateChange(serverAcState);
+      this.applyServerState(serverAcState);
     }
 
-    logStateChange(acState: AcState): void {
+    private logStateChange(acState: AcState): void {
       if (acState.on) {
         this.log(
           'Changed status (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
