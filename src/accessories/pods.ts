@@ -21,9 +21,6 @@ import {
 } from '../lib/temperature';
 import type { SensiboPlatform } from '../index';
 
-const stateTimeout = 30_000; // in ms to min time elapse to call for refresh
-const tempTimeout = 10_000; // in ms to min time elapse before next call for refresh
-
 function heatingCoolingStateForAcState(acState: AcState, characteristic: any) {
   if (acState.on === false) {
     return characteristic.OFF;
@@ -51,8 +48,8 @@ export default (hap: any) => {
     private platform: SensiboPlatform;
     private log: Logger;
 
-    private acState: AcState & { updateTime?: Date };
-    private roomMeasurement?: Measurement & { updateTime: Date };
+    private acState: AcState;
+    private roomMeasurement?: Measurement;
     private outdoorMeasurement?: Measurement;
     private userState: UserState;
 
@@ -297,20 +294,6 @@ export default (hap: any) => {
     }
 
     private async refreshAcState(): Promise<AcState | undefined> {
-      // This prevents this from running more often
-      const rightnow = new Date();
-
-      if (
-        this.acState.updateTime &&
-        rightnow.getTime() - this.acState.updateTime.getTime() < stateTimeout
-      ) {
-        return;
-      }
-
-      if (!this.acState.updateTime) {
-        this.acState.updateTime = rightnow;
-      }
-
       // Fetch the server state
       const serverAcState = await this.platform.sensiboClient.getState(
         this.deviceId,
@@ -324,14 +307,6 @@ export default (hap: any) => {
     }
 
     private async refreshRoomMeasurement(): Promise<Measurement | undefined> {
-      // This prevents this from running more often
-      if (
-        this.roomMeasurement &&
-        Date.now() - this.roomMeasurement.updateTime.getTime() < tempTimeout
-      ) {
-        return;
-      }
-
       // Update the temperature
       const measurements = await this.platform.sensiboClient.getMeasurements(
         this.deviceId,
@@ -344,7 +319,6 @@ export default (hap: any) => {
       const newMeasurement = {
         temperature: measurements[0].temperature,
         humidity: measurements[0].humidity,
-        updateTime: new Date(),
       };
 
       this.getService(Service.Thermostat).updateCharacteristic(
@@ -404,7 +378,6 @@ export default (hap: any) => {
       }
 
       this.acState.fanLevel = acState.fanLevel;
-      this.acState.updateTime = new Date(); // Set our last update time.
 
       if (!this.userState.autoMode) {
         this.userState.targetTemperature = this.acState.targetTemperature;
