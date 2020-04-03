@@ -1,9 +1,5 @@
 import { calculateDesiredAcState } from '../lib/temperatureController';
 import { acStatesEquivalent, AcState } from '../lib/acState';
-import {
-  intervalUntilNextObservation,
-  getOutdoorMeasurement,
-} from '../lib/bomClient';
 import { Device } from '../lib/device';
 import { Logger } from '../types/logger';
 import { Measurement } from '../lib/measurement';
@@ -54,7 +50,6 @@ export default (hap: any) => {
 
     private acState: AcState;
     private roomMeasurement?: Measurement;
-    private outdoorMeasurement?: Measurement;
     private userState: UserState;
 
     /**
@@ -244,32 +239,6 @@ export default (hap: any) => {
       }
 
       this.pollSensibo().catch((err) => this.log.warn(err));
-
-      const { bomObservationsUrl } = this.platform.config;
-      if (bomObservationsUrl) {
-        const refreshOutdoorMeasurement = async (): Promise<void> => {
-          const resetTimer = () => {
-            global.setTimeout(() => {
-              refreshOutdoorMeasurement();
-              return;
-            }, intervalUntilNextObservation());
-          };
-
-          try {
-            const measurement = await getOutdoorMeasurement(bomObservationsUrl);
-
-            this.outdoorMeasurement = measurement;
-            this.log(
-              `Retrieved BOM observation (outdoorTemp: ${measurement.temperature}, outdoorHumid: ${measurement.humidity})`,
-            );
-          } catch (err) {
-            this.log.warn(err);
-            resetTimer();
-          }
-        };
-
-        refreshOutdoorMeasurement();
-      }
     }
 
     getServices(): any[] {
@@ -531,7 +500,6 @@ export default (hap: any) => {
             this.log.bind(this),
             {
               roomMeasurement: this.roomMeasurement,
-              outdoorMeasurement: this.outdoorMeasurement,
               heatingThresholdTemperature,
               coolingThresholdTemperature,
             },
