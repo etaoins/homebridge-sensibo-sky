@@ -63,7 +63,7 @@ export default (hap: any) => {
     userStateApplyTimeout?: NodeJS.Timer;
 
     constructor(platform: SensiboPlatform, device: Device) {
-      const id = uuid.generate(`hbdev:sensibo:pod:${device.id}`);
+      const id = uuid.generate(`sensibo-sky:pod:${device.id}`);
       super(device.room.name, id);
 
       this.deviceId = device.id;
@@ -101,21 +101,6 @@ export default (hap: any) => {
         Characteristic.SerialNumber,
         `Pod ID: ${this.deviceId}`,
       );
-
-      // Blower Fan
-      this.addService(Service.Fan, 'Blower Fan', 'BlowerFan')
-        .getCharacteristic(Characteristic.On)
-        .on('set', (value: any, callback: () => void) => {
-          if (value && !this.userState.masterSwitch) {
-            this.log('Turning master switch on');
-            this.updateUserState({ masterSwitch: true });
-          } else if (!value && this.userState.masterSwitch) {
-            this.log('Turning master switch off');
-            this.updateUserState({ masterSwitch: false });
-          }
-
-          callback();
-        });
 
       // Thermostat Service
       const thermostatService = this.addService(Service.Thermostat);
@@ -231,6 +216,21 @@ export default (hap: any) => {
               TARGET_TEMPERATURE_RANGE,
             ),
           });
+
+          callback();
+        });
+
+      // Blower Fan
+      this.addService(Service.Fan, 'Blower Fan', 'BlowerFan')
+        .getCharacteristic(Characteristic.On)
+        .on('set', (value: any, callback: () => void) => {
+          if (value && !this.userState.masterSwitch) {
+            this.log('Turning master switch on');
+            this.updateUserState({ masterSwitch: true });
+          } else if (!value && this.userState.masterSwitch) {
+            this.log('Turning master switch off');
+            this.updateUserState({ masterSwitch: false });
+          }
 
           callback();
         });
