@@ -3,7 +3,6 @@ import { Config } from './config';
 import { TARGET_TEMPERATURE_RANGE } from './temperature';
 
 export interface UserState {
-  masterSwitch: boolean;
   autoMode: boolean;
   heatingThresholdTemperature: number;
   targetTemperature?: number;
@@ -11,7 +10,6 @@ export interface UserState {
 }
 
 export const DEFAULT_USER_STATE: UserState = {
-  masterSwitch: true,
   autoMode: false,
   heatingThresholdTemperature: TARGET_TEMPERATURE_RANGE.minValue,
   targetTemperature: undefined,
@@ -84,7 +82,6 @@ export const userStatesEquivalent = (
   right: UserState,
 ): boolean => {
   for (const propName of [
-    'masterSwitch',
     'autoMode',
     'heatingThresholdTemperature',
     'targetTemperature',

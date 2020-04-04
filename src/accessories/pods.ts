@@ -31,7 +31,6 @@ function heatingCoolingStateForAcState(acState: AcState, characteristic: any) {
       return characteristic.COOL;
     case 'heat':
       return characteristic.HEAT;
-    case 'fan':
     default:
       return characteristic.OFF;
   }
@@ -144,9 +143,7 @@ export default (hap: any) => {
               this.log('Setting target heating mode to off');
 
               this.updateUserState({ autoMode: false });
-              this.updateAcState({ mode: 'fan' })
-                .then(callback)
-                .catch(callback);
+              this.updateAcState({ on: false }).then(callback).catch(callback);
 
               break;
           }
@@ -214,24 +211,6 @@ export default (hap: any) => {
 
           callback();
         });
-
-      // Blower Fan
-      this.addService(Service.Fan, 'Blower Fan', 'BlowerFan')
-        .getCharacteristic(Characteristic.On)
-        .on('set', (value: any, callback: () => void) => {
-          if (value && !this.userState.masterSwitch) {
-            this.log('Turning master switch on');
-            this.updateUserState({ masterSwitch: true });
-          } else if (!value && this.userState.masterSwitch) {
-            this.log('Turning master switch off');
-            this.updateUserState({ masterSwitch: false });
-          }
-
-          callback();
-        });
-
-      // Humidity sensor service
-      this.addService(Service.HumiditySensor);
 
       // We don't need to wait for the AC state to do this
       if (this.userState.autoMode) {
@@ -303,7 +282,7 @@ export default (hap: any) => {
         newMeasurement.temperature,
       );
 
-      this.getService(Service.HumiditySensor).updateCharacteristic(
+      this.getService(Service.Thermostat).updateCharacteristic(
         Characteristic.CurrentRelativeHumidity,
         Math.round(newMeasurement.humidity),
       );
@@ -368,47 +347,30 @@ export default (hap: any) => {
     }
 
     private updateCharacteristicsForAutoMode(userState: UserState): void {
-      this.getService(Service.Fan).updateCharacteristic(
-        Characteristic.On,
-        userState.masterSwitch,
-      );
-
-      const thermostatService = this.getService(Service.Thermostat);
-
-      thermostatService.updateCharacteristic(
-        Characteristic.TargetHeatingCoolingState,
-        Characteristic.TargetHeatingCoolingState.AUTO,
-      );
-
-      thermostatService.updateCharacteristic(
-        Characteristic.TargetTemperature,
-        userState.targetTemperature,
-      );
+      this.getService(Service.Thermostat)
+        .updateCharacteristic(
+          Characteristic.TargetHeatingCoolingState,
+          Characteristic.TargetHeatingCoolingState.AUTO,
+        )
+        .updateCharacteristic(
+          Characteristic.TargetTemperature,
+          userState.targetTemperature,
+        );
     }
 
-    private updateCharacteristicsForManualMode(
-      acState: AcState,
-      userState: UserState,
-    ): void {
-      this.getService(Service.Fan).updateCharacteristic(
-        Characteristic.On,
-        userState.masterSwitch && acState.on,
-      );
-
-      const thermostatService = this.getService(Service.Thermostat);
-
-      thermostatService.updateCharacteristic(
-        Characteristic.TargetHeatingCoolingState,
-        heatingCoolingStateForAcState(
-          acState,
+    private updateCharacteristicsForManualMode(acState: AcState): void {
+      this.getService(Service.Thermostat)
+        .updateCharacteristic(
           Characteristic.TargetHeatingCoolingState,
-        ),
-      );
-
-      thermostatService.updateCharacteristic(
-        Characteristic.TargetTemperature,
-        acState.targetTemperature,
-      );
+          heatingCoolingStateForAcState(
+            acState,
+            Characteristic.TargetHeatingCoolingState,
+          ),
+        )
+        .updateCharacteristic(
+          Characteristic.TargetTemperature,
+          acState.targetTemperature,
+        );
     }
 
     private updateCharacteristicsFromAcState(
@@ -436,7 +398,7 @@ export default (hap: any) => {
 
       // Server AC state doesn't affect auto mode
       if (!userState.autoMode) {
-        this.updateCharacteristicsForManualMode(acState, userState);
+        this.updateCharacteristicsForManualMode(acState);
       }
     }
 
@@ -452,10 +414,9 @@ export default (hap: any) => {
 
       this.userState = newUserState;
 
+      // User state doesn't affect manual mode
       if (newUserState.autoMode) {
         this.updateCharacteristicsForAutoMode(newUserState);
-      } else {
-        this.updateCharacteristicsForManualMode(this.acState, newUserState);
       }
 
       if (this.userStateApplyTimeout) {
@@ -481,7 +442,6 @@ export default (hap: any) => {
 
       const {
         autoMode,
-        masterSwitch,
         heatingThresholdTemperature,
         targetTemperature: userTargetTemperature,
         coolingThresholdTemperature,
@@ -492,9 +452,7 @@ export default (hap: any) => {
         ...stateDelta,
       };
 
-      if (masterSwitch === false) {
-        newAcState.on = false;
-      } else if (autoMode) {
+      if (autoMode) {
         if (this.roomMeasurement) {
           newAcState = calculateDesiredAcState(
             this.log.bind(this),
@@ -507,7 +465,6 @@ export default (hap: any) => {
           );
         }
       } else {
-        newAcState.on = true;
         newAcState.fanLevel = 'auto';
         if (typeof userTargetTemperature === 'number') {
           newAcState.targetTemperature = userTargetTemperature;

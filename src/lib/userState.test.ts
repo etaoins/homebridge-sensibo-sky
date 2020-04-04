@@ -8,7 +8,6 @@ import {
 describe('userStatesEquivalent', () => {
   it('should consider identical states to be equivalent', () => {
     const state: UserState = {
-      masterSwitch: true,
       autoMode: true,
       heatingThresholdTemperature: 1.0,
       targetTemperature: 2.0,
@@ -20,7 +19,6 @@ describe('userStatesEquivalent', () => {
 
   it('should consider identical states including NaN to be equivalent', () => {
     const state: UserState = {
-      masterSwitch: true,
       autoMode: true,
       heatingThresholdTemperature: 1.0,
       targetTemperature: NaN,
@@ -32,7 +30,6 @@ describe('userStatesEquivalent', () => {
 
   it('should not consider different states to be equivalent', () => {
     const left: UserState = {
-      masterSwitch: true,
       autoMode: true,
       heatingThresholdTemperature: 1.0,
       targetTemperature: 2.0,
@@ -40,7 +37,6 @@ describe('userStatesEquivalent', () => {
     };
 
     const right: UserState = {
-      masterSwitch: false,
       autoMode: false,
       heatingThresholdTemperature: 4.0,
       targetTemperature: 5.0,
@@ -96,7 +92,6 @@ describe('restoreUserState', () => {
         "autoMode": false,
         "coolingThresholdTemperature": 6,
         "heatingThresholdTemperature": 4,
-        "masterSwitch": false,
         "targetTemperature": 5,
       }
     `);
