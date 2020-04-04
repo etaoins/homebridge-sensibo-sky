@@ -34,7 +34,6 @@ export const calculateDesiredAcState = (
   log(
     'Calculating desired state (roomTemp: %s, mode: %s, heatingThresh %s, coolingThresh: %s)',
     roomMeasurement.temperature,
-    roomMeasurement.humidity,
     prevState.on ? prevState.mode : 'off',
     heatingThresholdTemperature,
     coolingThresholdTemperature,
