@@ -455,7 +455,7 @@ export default (hap: any) => {
       if (autoMode) {
         if (this.roomMeasurement) {
           newAcState = calculateDesiredAcState(
-            this.log.bind(this),
+            this.log.bind(this.log),
             {
               roomMeasurement: this.roomMeasurement,
               heatingThresholdTemperature,
