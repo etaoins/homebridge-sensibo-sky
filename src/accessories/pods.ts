@@ -249,7 +249,7 @@ export default (hap: any) => {
 
     private async refreshAcState(): Promise<AcState | undefined> {
       // Fetch the server state
-      const serverAcState = await this.platform.sensiboClient.getState(
+      const serverAcState = await this.platform.sensiboClient.getAcState(
         this.deviceId,
       );
 

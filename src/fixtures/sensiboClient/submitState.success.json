@@ -1,0 +1,17 @@
+{
+  "status": "success",
+  "result": {
+    "status": "Success",
+    "reason": "UserRequest",
+    "acState": {
+      "on": true,
+      "targetTemperature": 24,
+      "temperatureUnit": "C",
+      "mode": "heat",
+      "fanLevel": "low"
+    },
+    "changedProperties": ["on", "targetTemperature"],
+    "id": "abc123",
+    "failureReason": null
+  }
+}

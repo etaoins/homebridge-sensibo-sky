@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "result": [
+    {
+      "id": "def456",
+      "room": { "name": "Living Room", "icon": "livingroom" }
+    }
+  ]
+}

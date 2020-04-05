@@ -1,0 +1,116 @@
+{
+  "status": "success",
+  "moreResults": true,
+  "result": [
+    {
+      "status": "Success",
+      "acState": {
+        "on": false,
+        "targetTemperature": 21,
+        "temperatureUnit": "C",
+        "mode": "heat",
+        "fanLevel": "low"
+      },
+      "reason": "UserRequest"
+    },
+    {
+      "status": "Success",
+      "acState": {
+        "on": true,
+        "targetTemperature": 21,
+        "temperatureUnit": "C",
+        "mode": "heat",
+        "fanLevel": "low"
+      },
+      "reason": "UserRequest"
+    },
+    {
+      "status": "Success",
+      "acState": {
+        "on": false,
+        "targetTemperature": 21,
+        "temperatureUnit": "C",
+        "mode": "heat",
+        "fanLevel": "low"
+      },
+      "reason": "UserRequest"
+    },
+    {
+      "status": "Success",
+      "acState": {
+        "on": true,
+        "targetTemperature": 21,
+        "temperatureUnit": "C",
+        "mode": "heat",
+        "fanLevel": "low"
+      },
+      "reason": "UserRequest"
+    },
+    {
+      "status": "Success",
+      "acState": {
+        "on": true,
+        "targetTemperature": 18,
+        "temperatureUnit": "C",
+        "mode": "cool",
+        "fanLevel": "low"
+      },
+      "reason": "UserRequest"
+    },
+    {
+      "status": "Success",
+      "acState": {
+        "on": false,
+        "targetTemperature": 27,
+        "temperatureUnit": "C",
+        "mode": "heat",
+        "fanLevel": "auto"
+      },
+      "reason": "UserRequest"
+    },
+    {
+      "status": "Success",
+      "acState": {
+        "on": true,
+        "targetTemperature": 27,
+        "temperatureUnit": "C",
+        "mode": "heat",
+        "fanLevel": "auto"
+      },
+      "reason": "UserRequest"
+    },
+    {
+      "status": "Success",
+      "acState": {
+        "on": true,
+        "targetTemperature": 22,
+        "temperatureUnit": "C",
+        "mode": "heat",
+        "fanLevel": "auto"
+      },
+      "reason": "UserRequest"
+    },
+    {
+      "status": "Success",
+      "acState": {
+        "on": true,
+        "targetTemperature": 22,
+        "temperatureUnit": "C",
+        "mode": "cool",
+        "fanLevel": "auto"
+      },
+      "reason": "UserRequest"
+    },
+    {
+      "status": "Success",
+      "acState": {
+        "on": false,
+        "targetTemperature": 22,
+        "temperatureUnit": "C",
+        "mode": "cool",
+        "fanLevel": "auto"
+      },
+      "reason": "UserRequest"
+    }
+  ]
+}

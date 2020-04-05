@@ -48,20 +48,20 @@ const makeRequest = async (request: Request): Promise<any> =>
       });
 
       res.on('end', () => {
+        if (res.statusCode !== 200) {
+          reject(new Error(`Unexpected status code: ${res.statusCode}`));
+        }
+
         try {
           resolve(JSON.parse(acc));
         } catch (e) {
           reject(e);
         }
       });
-
-      res.on('error', () => {
-        reject(new Error('HTTP request error'));
-      });
     });
 
-    req.on('error', () => {
-      reject(new Error('HTTP request error'));
+    req.on('error', (err) => {
+      reject(new Error(`HTTP request error: ${err.message}`));
     });
 
     // For POST (submit) state
@@ -93,7 +93,7 @@ export class SensiboClient {
     throw new Error(`Unexpected 'getPods' body with status ${data?.status}`);
   }
 
-  async getState(deviceId: string): Promise<AcState | undefined> {
+  async getAcState(deviceId: string): Promise<AcState | undefined> {
     // We get the last 10 items in case the first one failed.
     const data = await get(
       `pods/${deviceId}/acStates?fields=status,reason,acState&limit=10&apiKey=${this.apiKey}`,
