@@ -15,7 +15,7 @@ function fanLevelForTemperatureDeviation(deviation: number): FanLevel {
 }
 
 interface AutoModeInput {
-  roomMeasurement: Measurement;
+  roomMeasurement: Pick<Measurement, 'temperature'>;
   heatingThresholdTemperature: number;
   coolingThresholdTemperature: number;
 }

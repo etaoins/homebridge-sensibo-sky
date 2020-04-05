@@ -2,11 +2,7 @@ import { calculateDesiredAcState } from '../lib/temperatureController';
 import { acStatesEquivalent, AcState } from '../lib/acState';
 import { Device } from '../lib/device';
 import { Logger } from '../types/logger';
-import { Measurement } from '../lib/measurement';
-import {
-  MEASUREMENT_INTERVAL_SECS,
-  SensiboMeasurement,
-} from '../lib/sensiboClient';
+import { Measurement, pollNextMeasurementInMs } from '../lib/measurement';
 import {
   saveUserState,
   restoreUserState,
@@ -229,25 +225,26 @@ export default (hap: any) => {
     }
 
     private async pollSensibo(): Promise<void> {
-      const newAcState = await this.refreshAcState();
-      const newMeasurement = await this.refreshRoomMeasurement();
+      let newMeasurement: Measurement | undefined;
 
-      // Only update our state if we have new information
-      if (newAcState || newMeasurement) {
-        await this.updateAcState({});
+      try {
+        newMeasurement = await this.refreshRoomMeasurement();
+      } catch (err) {
+        this.log.warn(err);
       }
-
-      const nextRefresh =
-        (MEASUREMENT_INTERVAL_SECS -
-          (newMeasurement?.time.secondsAgo ?? 0) +
-          1) *
-        1000;
 
       global.setTimeout(() => {
         this.pollSensibo().catch((err) => {
           this.log.warn(err.message);
         });
-      }, nextRefresh);
+      }, pollNextMeasurementInMs(this.log.bind(this.log), newMeasurement));
+
+      const newAcState = await this.refreshAcState();
+
+      // Only update our state if we have new information
+      if (newAcState || newMeasurement) {
+        await this.updateAcState({});
+      }
     }
 
     private async refreshAcState(): Promise<AcState | undefined> {
@@ -263,9 +260,7 @@ export default (hap: any) => {
       return serverAcState;
     }
 
-    private async refreshRoomMeasurement(): Promise<
-      SensiboMeasurement | undefined
-    > {
+    private async refreshRoomMeasurement(): Promise<Measurement | undefined> {
       // Update the temperature
       const measurements = await this.platform.sensiboClient.getMeasurements(
         this.deviceId,
@@ -287,11 +282,7 @@ export default (hap: any) => {
         Math.round(newMeasurement.humidity),
       );
 
-      this.roomMeasurement = {
-        temperature: newMeasurement.temperature,
-        humidity: newMeasurement.humidity,
-      };
-
+      this.roomMeasurement = newMeasurement;
       return newMeasurement;
     }
 

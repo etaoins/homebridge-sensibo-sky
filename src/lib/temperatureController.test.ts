@@ -19,7 +19,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 21.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -39,7 +38,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 18.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -67,7 +65,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 17.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -95,7 +92,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 14.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -123,7 +119,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 14.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -148,7 +143,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 26.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -176,7 +170,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 28.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -204,7 +197,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 26.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -229,7 +221,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 22.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -252,7 +243,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 20.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -275,7 +265,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 20.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -299,7 +288,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 22.0,
         },
         heatingThresholdTemperature: 19.0,
@@ -323,7 +311,6 @@ describe('calculateDesiredAcState', () => {
       log as any,
       {
         roomMeasurement: {
-          humidity: 40,
           temperature: 22.0,
         },
         heatingThresholdTemperature: 19.0,

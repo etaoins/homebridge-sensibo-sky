@@ -5,10 +5,6 @@ import { AcState } from './acState';
 import { Device } from './device';
 import { Measurement } from './measurement';
 
-export type SensiboMeasurement = Measurement & {
-  time: { secondsAgo: number; time: string };
-};
-
 /**
  * Interval that Sensibo collects measurements on
  */
@@ -45,23 +41,27 @@ const makeRequest = async (request: Request): Promise<any> =>
       options.headers['Content-Type'] = 'application/json';
     }
 
-    const req = https.request(options, (response) => {
+    const req = https.request(options, (res) => {
       let acc = '';
-      response.on('data', (chunk) => {
+      res.on('data', (chunk) => {
         acc += chunk;
       });
 
-      response.on('end', () => {
+      res.on('end', () => {
         try {
           resolve(JSON.parse(acc));
         } catch (e) {
           reject(e);
         }
       });
+
+      res.on('error', () => {
+        reject(new Error('HTTP request error'));
+      });
     });
 
     req.on('error', () => {
-      reject(new Error('HTTP error'));
+      reject(new Error('HTTP request error'));
     });
 
     // For POST (submit) state
@@ -116,7 +116,7 @@ export class SensiboClient {
     throw new Error(`Unexpected 'getState' body with status ${data?.status}`);
   }
 
-  async getMeasurements(deviceId: string): Promise<SensiboMeasurement[]> {
+  async getMeasurements(deviceId: string): Promise<Measurement[]> {
     const data = await get(
       `pods/${deviceId}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
     );
