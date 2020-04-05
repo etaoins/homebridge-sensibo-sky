@@ -2,10 +2,9 @@ module.exports = {
   preset: 'ts-jest',
   roots: ['<rootDir>/src'],
   collectCoverageFrom: [
-    'src/lib/autoMode.ts',
     'src/lib/acState.ts',
-    'src/lib/humidityController.ts',
     'src/lib/temperature.ts',
+    'src/lib/temperatureController.ts',
     'src/lib/userState.ts',
   ],
   coverageThreshold: {
