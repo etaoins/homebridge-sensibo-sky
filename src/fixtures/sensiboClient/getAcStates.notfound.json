@@ -1,0 +1,5 @@
+{
+  "status": "failed",
+  "reason": "NotFound",
+  "message": "No such device or device is not associated with user"
+}

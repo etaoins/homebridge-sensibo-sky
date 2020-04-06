@@ -68,12 +68,15 @@ describe('sensiboClient', () => {
       expect(nockScope.isDone()).toBe(true);
     });
 
-    it('should return an error on 404', async () => {
+    it('should return an error on missing device', async () => {
       nockScope
         .get(
           '/api/v2/pods/def456/acStates?fields=status,reason,acState&limit=10&apiKey=TEST-API-KEY',
         )
-        .reply(404, 'Not found');
+        .replyWithFile(
+          404,
+          './src/fixtures/sensiboClient/getAcStates.notfound.json',
+        );
 
       await expect(sensiboClient.getAcState('def456')).rejects.toThrowError(
         'Unexpected status code: 404',
@@ -124,6 +127,23 @@ describe('sensiboClient', () => {
 
       expect(nockScope.isDone()).toBe(true);
     });
+
+    it('should return an error with a bad API key', async () => {
+      nockScope
+        .get(
+          '/api/v2/pods/def456/measurements?fields=temperature,humidity,time&apiKey=TEST-API-KEY',
+        )
+        .replyWithFile(
+          403,
+          './src/fixtures/sensiboClient/getMeasurements.notauthorized.json',
+        );
+
+      await expect(sensiboClient.getMeasurements('def456')).rejects.toThrow(
+        'Unexpected status code: 403',
+      );
+
+      expect(nockScope.isDone()).toBe(true);
+    });
   });
 
   describe('submitState', () => {
@@ -155,6 +175,31 @@ describe('sensiboClient', () => {
                 "temperatureUnit": "C",
               }
             `);
+
+      expect(nockScope.isDone()).toBe(true);
+    });
+
+    it('should return an error on an unsupported remote command', async () => {
+      const MOCK_STATE = {
+        on: true,
+        targetTemperature: 24,
+        temperatureUnit: 'C',
+        mode: 'fan',
+        fanLevel: 'low',
+      };
+
+      nockScope
+        .post('/api/v2/pods/def456/acStates?apiKey=TEST-API-KEY', {
+          acState: MOCK_STATE,
+        })
+        .replyWithFile(
+          500,
+          './src/fixtures/sensiboClient/submitState.nosuchremotecommand.json',
+        );
+
+      await expect(
+        sensiboClient.submitState('def456', MOCK_STATE as any),
+      ).rejects.toThrow('Unexpected status code: 500');
 
       expect(nockScope.isDone()).toBe(true);
     });

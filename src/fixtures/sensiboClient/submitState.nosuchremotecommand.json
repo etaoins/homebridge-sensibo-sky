@@ -1,0 +1,27 @@
+{
+  "status": "failed",
+  "reason": "NoSuchRemoteCommand",
+  "result": {
+    "request": {
+      "status": "Failed",
+      "reason": "UserRequest",
+      "acState": {
+        "on": true,
+        "targetTemperature": 24,
+        "temperatureUnit": "C",
+        "mode": "fan",
+        "fanLevel": "low"
+      },
+      "changedProperties": [],
+      "id": "abc123",
+      "failureReason": "NoSuchRemoteCommand"
+    },
+    "currentAcState": {
+      "on": false,
+      "fanLevel": "low",
+      "temperatureUnit": "C",
+      "targetTemperature": 21,
+      "mode": "heat"
+    }
+  }
+}
