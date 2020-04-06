@@ -415,7 +415,9 @@ export default (hap: any) => {
       }
 
       this.userStateApplyTimeout = global.setTimeout(() => {
-        this.updateAcState({});
+        this.updateAcState({}).catch((err) => {
+          this.log.warn(err.message);
+        });
       }, 500);
 
       saveUserState(
