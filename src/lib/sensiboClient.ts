@@ -1,3 +1,4 @@
+import { OutgoingHttpHeaders } from 'http';
 import https from 'https';
 
 import { celciusToFahrenheit } from './temperature';
@@ -32,7 +33,7 @@ const makeRequest = async (request: Request): Promise<any> =>
       port: 443,
       path: `/api/v2/${request.path}`,
       method: request.method,
-      headers: {} as Record<string, any>,
+      headers: { Accept: 'application/json' } as OutgoingHttpHeaders,
     };
 
     const stringBody = request.body ? JSON.stringify(request.body) : undefined;
