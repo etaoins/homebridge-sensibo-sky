@@ -48,7 +48,7 @@ describe('calculateDesiredAcState', () => {
 
     expect(log).toBeCalledTimes(2);
     expect(log).toBeCalledWith(
-      'Colder than heating threshold, switching to hot mode',
+      'Colder than heating threshold, switching to heat mode',
     );
     expect(nextState).toMatchObject({
       fanLevel: 'low',
@@ -75,7 +75,7 @@ describe('calculateDesiredAcState', () => {
 
     expect(log).toBeCalledTimes(2);
     expect(log).toBeCalledWith(
-      'Colder than heating threshold, switching to hot mode',
+      'Colder than heating threshold, switching to heat mode',
     );
     expect(nextState).toMatchObject({
       fanLevel: 'medium',
@@ -102,7 +102,7 @@ describe('calculateDesiredAcState', () => {
 
     expect(log).toBeCalledTimes(2);
     expect(log).toBeCalledWith(
-      'Colder than heating threshold, switching to hot mode',
+      'Colder than heating threshold, switching to heat mode',
     );
     expect(nextState).toMatchObject({
       fanLevel: 'high',

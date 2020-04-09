@@ -65,7 +65,7 @@ export const calculateDesiredAcState = (
     nextState.on = true;
   } else if (roomMeasurement.temperature < heatingThresholdTemperature) {
     if (prevState.mode !== 'heat' || prevState.on !== true) {
-      log('Colder than heating threshold, switching to hot mode');
+      log('Colder than heating threshold, switching to heat mode');
     }
 
     nextState.mode = 'heat';
