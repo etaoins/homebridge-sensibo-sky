@@ -23,7 +23,6 @@ export class SensiboPlatform {
 
     this.sensiboClient
       .getPods()
-      .catch((err) => this.log.warn(err))
       .then((devices) => {
         if (!devices) {
           this.log(
@@ -48,7 +47,8 @@ export class SensiboPlatform {
         });
 
         callback(foundAccessories);
-      });
+      })
+      .catch((err) => this.log.warn(err));
   }
 }
 
