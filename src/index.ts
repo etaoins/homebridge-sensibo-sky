@@ -21,34 +21,41 @@ export class SensiboPlatform {
       this.homebridgeApi.hap,
     );
 
-    this.sensiboClient
-      .getPods()
-      .then((devices) => {
-        if (!devices) {
-          this.log(
-            'No Senisbo devices returned from Sensibo server! Please check your API key.',
-          );
+    const fetchAccessories = () => {
+      this.sensiboClient
+        .getPods()
+        .then((devices) => {
+          if (!devices) {
+            this.log(
+              'No Senisbo devices returned from Sensibo server! Please check your API key.',
+            );
 
-          callback([]);
-          return;
-        }
+            callback([]);
+            return;
+          }
 
-        const foundAccessories = devices.map((device) => {
-          const accessory = new SensiboPodAccessory(this, device);
+          const foundAccessories = devices.map((device) => {
+            const accessory = new SensiboPodAccessory(this, device);
 
-          this.log(
-            'Device Added (Name: %s, ID: %s, Group: %s)',
-            accessory.name,
-            accessory.deviceId,
-            accessory.deviceGroup,
-          );
+            this.log(
+              'Device Added (Name: %s, ID: %s, Group: %s)',
+              accessory.name,
+              accessory.deviceId,
+              accessory.deviceGroup,
+            );
 
-          return accessory;
+            return accessory;
+          });
+
+          callback(foundAccessories);
+        })
+        .catch((err) => {
+          this.log.warn(err);
+          global.setTimeout(fetchAccessories, 60_000);
         });
+    };
 
-        callback(foundAccessories);
-      })
-      .catch((err) => this.log.warn(err));
+    fetchAccessories();
   }
 }
 
