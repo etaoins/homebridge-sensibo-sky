@@ -415,16 +415,16 @@ export default (hap: any) => {
       }
 
       this.userStateApplyTimeout = global.setTimeout(() => {
+        saveUserState(
+          this.platform.config,
+          this.deviceId,
+          newUserState,
+        ).catch((err) => this.log.warn(`Error saving state: ${err}`));
+
         this.updateAcState({}).catch((err) => {
           this.log.warn(err.message);
         });
       }, 500);
-
-      saveUserState(
-        this.platform.config,
-        this.deviceId,
-        newUserState,
-      ).catch((err) => this.log.warn(`Error saving state: ${err}`));
     }
 
     private async updateAcState(stateDelta: Partial<AcState>): Promise<void> {
