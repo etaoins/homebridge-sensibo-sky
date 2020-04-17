@@ -22,6 +22,9 @@ export class SensiboPlatform {
     );
 
     const fetchAccessories = () => {
+      const MAX_RETRY_DELAY_SECS = 80;
+      let retryDelaySecs = 5;
+
       this.sensiboClient
         .getPods()
         .then((devices) => {
@@ -51,7 +54,11 @@ export class SensiboPlatform {
         })
         .catch((err) => {
           this.log.warn(err);
-          global.setTimeout(fetchAccessories, 60_000);
+
+          this.log(`Retrying in ${retryDelaySecs} seconds`);
+          global.setTimeout(fetchAccessories, retryDelaySecs * 1000);
+
+          retryDelaySecs = Math.min(retryDelaySecs * 2, MAX_RETRY_DELAY_SECS);
         });
     };
 
