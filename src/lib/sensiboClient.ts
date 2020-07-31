@@ -26,7 +26,7 @@ interface StateChange {
   failureReason: string | null;
 }
 
-const makeRequest = async (request: Request): Promise<any> =>
+const makeRequest = async (request: Request): Promise<unknown> =>
   new Promise((resolve, reject) => {
     const options = {
       hostname: 'home.sensibo.com',
@@ -50,7 +50,9 @@ const makeRequest = async (request: Request): Promise<any> =>
 
       res.on('end', () => {
         if (res.statusCode !== 200) {
-          reject(new Error(`Unexpected status code: ${res.statusCode}`));
+          reject(
+            new Error(`Unexpected status code: ${String(res.statusCode)}`),
+          );
         }
 
         try {
@@ -73,10 +75,10 @@ const makeRequest = async (request: Request): Promise<any> =>
     req.end();
   });
 
-const post = async (request: Omit<Request, 'method'>): Promise<any> =>
+const post = async (request: Omit<Request, 'method'>): Promise<unknown> =>
   makeRequest({ ...request, method: 'POST' });
 
-const get = async (path: string): Promise<any> =>
+const get = async (path: string): Promise<unknown> =>
   makeRequest({ method: 'GET', path });
 
 export class SensiboClient {
@@ -87,11 +89,16 @@ export class SensiboClient {
       `users/me/pods?fields=id,room&apiKey=${this.apiKey}`,
     );
 
-    if (data?.status === 'success' && Array.isArray(data?.result)) {
-      return data.result;
+    if (!data || typeof data !== 'object') {
+      throw new Error("GET 'pods' body was not an object");
     }
 
-    throw new Error(`Unexpected 'getPods' body with status ${data?.status}`);
+    const { status, result } = data as Record<string, unknown>;
+    if (status === 'success' && Array.isArray(result)) {
+      return result as Device[];
+    }
+
+    throw new Error(`Unexpected GET 'pods' body with status ${String(status)}`);
   }
 
   async getAcState(deviceId: string): Promise<AcState | undefined> {
@@ -100,13 +107,13 @@ export class SensiboClient {
       `pods/${deviceId}/acStates?fields=status,reason,acState&limit=10&apiKey=${this.apiKey}`,
     );
 
-    if (!data) {
-      throw new Error('Missing body');
+    if (!data || typeof data !== 'object') {
+      throw new Error("GET 'acStates' body as not an object");
     }
 
-    const { status, result } = data;
+    const { status, result } = data as Record<string, unknown>;
     if (status === 'success' && Array.isArray(result)) {
-      const stateChanges: StateChange[] = result;
+      const stateChanges = result as StateChange[];
       const firstSuccess = stateChanges.find(
         (entry) => entry.status === 'Success',
       );
@@ -114,7 +121,9 @@ export class SensiboClient {
       return firstSuccess?.acState;
     }
 
-    throw new Error(`Unexpected 'getState' body with status ${data?.status}`);
+    throw new Error(
+      `Unexpected GET 'acStates' body with status ${String(status)}`,
+    );
   }
 
   async getMeasurements(deviceId: string): Promise<Measurement[]> {
@@ -122,12 +131,17 @@ export class SensiboClient {
       `pods/${deviceId}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
     );
 
-    if (data?.status === 'success' && Array.isArray(data.result)) {
-      return data.result;
+    if (!data || typeof data !== 'object') {
+      throw new Error("GET 'measurements' body was not an object");
+    }
+
+    const { status, result } = data as Record<string, unknown>;
+    if (status === 'success' && Array.isArray(result)) {
+      return result as Measurement[];
     }
 
     throw new Error(
-      `Unexpected 'getMeasurements' body with status ${data?.status}`,
+      `Unexpected GET 'measurements' body with status ${String(status)}`,
     );
   }
 
@@ -151,12 +165,18 @@ export class SensiboClient {
 
     const data = await post(request);
 
-    const { status, result } = data;
+    if (!data || typeof data !== 'object') {
+      throw new Error("POST 'acStates' body as not an object");
+    }
+
+    const { status, result } = data as Record<string, unknown>;
     if (status === 'success' && typeof result === 'object') {
-      const stateChange: StateChange = result;
+      const stateChange = result as StateChange;
       if (stateChange.status !== 'Success') {
         throw new Error(
-          `'submitState' failed to change state with status ${status}: ${stateChange.failureReason}`,
+          `POST 'acStates' failed to change state with status ${status}: ${String(
+            stateChange.failureReason,
+          )}`,
         );
       }
 
@@ -164,7 +184,7 @@ export class SensiboClient {
     }
 
     throw new Error(
-      `Unexpected 'submitState' body with status ${data?.status}`,
+      `Unexpected POST 'acStates' body with status ${String(status)}`,
     );
   }
 }
