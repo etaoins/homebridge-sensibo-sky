@@ -1,4 +1,4 @@
-import { Logger } from '../types/logger';
+import * as Homebridge from 'homebridge';
 
 import { AcState, FanLevel } from './acState';
 import { Measurement } from './measurement';
@@ -21,7 +21,7 @@ interface AutoModeInput {
 }
 
 export const calculateDesiredAcState = (
-  log: Logger,
+  log: Homebridge.Logging,
   input: AutoModeInput,
   prevState: AcState,
 ): AcState => {

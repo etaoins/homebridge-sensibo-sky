@@ -18,8 +18,8 @@
     "sensibo-sky"
   ],
   "engines": {
-    "node": ">=0.12.0",
-    "homebridge": ">=0.3.0"
+    "node": ">=10.17.0",
+    "homebridge": ">=1.0.0"
   },
   "scripts": {
     "build": "tsc",
@@ -43,6 +43,7 @@
     "eslint-config-seek": "^6.0.2",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-typescript": "0.14.0",
+    "homebridge": "^1.0.2",
     "jest": "^25.2.4",
     "nock": "^12.0.3",
     "prettier": "^2.0.2",

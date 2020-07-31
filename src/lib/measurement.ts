@@ -1,4 +1,4 @@
-import { Logger } from '../types/logger';
+import * as Homebridge from 'homebridge';
 
 /**
  * Minimum poll interval
@@ -20,7 +20,7 @@ export interface Measurement {
  * Calculates when we should poll for the next measurement
  */
 export const pollNextMeasurementInMs = (
-  log: Logger,
+  log: Homebridge.Logging,
   prevMeasurement?: Pick<Measurement, 'time'>,
 ): number => {
   if (!prevMeasurement) {

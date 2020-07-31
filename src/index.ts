@@ -1,20 +1,24 @@
+import type * as Homebridge from 'homebridge';
+
 import { SensiboClient } from './lib/sensiboClient';
 import { Config } from './lib/config';
-import { Logger } from './types/logger';
 import createSensiboPodAccessory from './accessories/pods';
 
-export class SensiboPlatform {
+export class SensiboPlatform implements Homebridge.StaticPlatformPlugin {
   sensiboClient: SensiboClient;
+  readonly config: Config;
 
   constructor(
-    readonly log: Logger,
-    readonly config: Config,
-    readonly homebridgeApi: any,
+    readonly log: Homebridge.Logging,
+    platformConfig: Homebridge.PlatformConfig,
+    readonly homebridgeApi: Homebridge.API,
   ) {
-    this.sensiboClient = new SensiboClient(config.apiKey);
+    // TODO: Validate config
+    this.config = (platformConfig as any) as Config;
+    this.sensiboClient = new SensiboClient(this.config.apiKey);
   }
 
-  accessories(callback: (accessories: any[]) => void) {
+  accessories(callback: (accessories: Homebridge.AccessoryPlugin[]) => void) {
     this.log('Fetching Sensibo devices...');
 
     const SensiboPodAccessory = createSensiboPodAccessory(
@@ -41,10 +45,9 @@ export class SensiboPlatform {
             const accessory = new SensiboPodAccessory(this, device);
 
             this.log(
-              'Device Added (Name: %s, ID: %s, Group: %s)',
-              accessory.name,
+              'Device Added (Name: %s, ID: %s)',
+              accessory.displayName,
               accessory.deviceId,
-              accessory.deviceGroup,
             );
 
             return accessory;
@@ -66,7 +69,7 @@ export class SensiboPlatform {
   }
 }
 
-module.exports = (homebridge: any) => {
+module.exports = (homebridge: Homebridge.API) => {
   homebridge.registerPlatform(
     'homebridge-sensibo-sky',
     'SensiboSky',

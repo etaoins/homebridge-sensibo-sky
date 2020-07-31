@@ -1,7 +1,8 @@
+import * as Homebridge from 'homebridge';
+
 import { calculateDesiredAcState } from '../lib/temperatureController';
 import { acStatesEquivalent, AcState } from '../lib/acState';
 import { Device } from '../lib/device';
-import { Logger } from '../types/logger';
 import { Measurement, pollNextMeasurementInMs } from '../lib/measurement';
 import {
   saveUserState,
@@ -33,7 +34,7 @@ function heatingCoolingStateForAcState(acState: AcState, characteristic: any) {
 }
 
 // Pod Accessory
-export default (hap: any) => {
+export default (hap: Homebridge.HAP) => {
   const { Service, Characteristic, Accessory, uuid } = hap;
 
   return class SensiboPodAccessory extends Accessory {
@@ -41,7 +42,7 @@ export default (hap: any) => {
     public deviceId: string;
 
     private platform: SensiboPlatform;
-    private log: Logger;
+    private log: Homebridge.Logging;
 
     private acState: AcState;
     private roomMeasurement?: Measurement;
@@ -57,7 +58,6 @@ export default (hap: any) => {
       super(device.room.name, id);
 
       this.deviceId = device.id;
-      this.name = device.room.name;
       this.platform = platform;
       this.log = platform.log;
 
@@ -75,19 +75,19 @@ export default (hap: any) => {
 
       // AccessoryInformation characteristic
       // Manufacturer characteristic
-      this.getService(Service.AccessoryInformation).setCharacteristic(
+      this.getService(Service.AccessoryInformation)!.setCharacteristic(
         Characteristic.Manufacturer,
         'homebridge-sensibo-sky',
       );
 
       // Model characteristic
-      this.getService(Service.AccessoryInformation).setCharacteristic(
+      this.getService(Service.AccessoryInformation)!.setCharacteristic(
         Characteristic.Model,
         'version 0.2.1',
       );
 
       // SerialNumber characteristic
-      this.getService(Service.AccessoryInformation).setCharacteristic(
+      this.getService(Service.AccessoryInformation)!.setCharacteristic(
         Characteristic.SerialNumber,
         `Pod ID: ${this.deviceId}`,
       );
@@ -107,43 +107,51 @@ export default (hap: any) => {
       // Target Heating/Cooling Mode characteristic
       thermostatService
         .getCharacteristic(Characteristic.TargetHeatingCoolingState)
-        .on('set', (value: any, callback: (err: any) => void) => {
-          switch (value) {
-            case Characteristic.TargetHeatingCoolingState.COOL:
-              this.log('Setting target heating mode to cool');
+        .on(
+          Homebridge.CharacteristicEventTypes.SET,
+          (
+            value: Homebridge.CharacteristicValue,
+            callback: Homebridge.CharacteristicSetCallback,
+          ) => {
+            switch (value) {
+              case Characteristic.TargetHeatingCoolingState.COOL:
+                this.log('Setting target heating mode to cool');
 
-              this.updateUserState({ autoMode: false });
-              this.updateAcState({ on: true, mode: 'cool' })
-                .then(callback)
-                .catch(callback);
+                this.updateUserState({ autoMode: false });
+                this.updateAcState({ on: true, mode: 'cool' })
+                  .then(() => callback())
+                  .catch(callback);
 
-              break;
-            case Characteristic.TargetHeatingCoolingState.HEAT:
-              this.log('Setting target heating mode to heat');
+                break;
+              case Characteristic.TargetHeatingCoolingState.HEAT:
+                this.log('Setting target heating mode to heat');
 
-              this.updateUserState({ autoMode: false });
-              this.updateAcState({ on: true, mode: 'heat' })
-                .then(callback)
-                .catch(callback);
+                this.updateUserState({ autoMode: false });
+                this.updateAcState({ on: true, mode: 'heat' })
+                  .then(() => callback())
+                  .catch(callback);
 
-              break;
-            case Characteristic.TargetHeatingCoolingState.AUTO:
-              this.log('Setting target heating mode to auto');
-              this.updateUserState({ autoMode: true });
-              callback(undefined);
+                break;
+              case Characteristic.TargetHeatingCoolingState.AUTO:
+                this.log('Setting target heating mode to auto');
+                this.updateUserState({ autoMode: true });
+                callback(undefined);
 
-              break;
+                break;
 
-            case Characteristic.TargetHeatingCoolingState.OFF:
-            default:
-              this.log('Setting target heating mode to off');
+              case Characteristic.TargetHeatingCoolingState.OFF:
+              default:
+                this.log('Setting target heating mode to off');
 
-              this.updateUserState({ autoMode: false });
-              this.updateAcState({ on: false }).then(callback).catch(callback);
+                this.updateUserState({ autoMode: false });
+                this.updateAcState({ on: false })
+                  .then(() => callback())
+                  .catch(callback);
 
-              break;
-          }
-        });
+                break;
+            }
+          },
+        );
 
       const commonTemperatureProps = {
         format: Characteristic.Formats.FLOAT,
@@ -159,54 +167,90 @@ export default (hap: any) => {
       thermostatService
         .getCharacteristic(Characteristic.TargetTemperature)
         .setProps({ ...commonTemperatureProps, ...SENSIBO_TEMPERATURE_RANGE })
-        .on('set', (value: any, callback: () => void) => {
-          this.log(`Setting target temperature: ${value}`);
+        .on(
+          Homebridge.CharacteristicEventTypes.SET,
+          (
+            value: Homebridge.CharacteristicValue,
+            callback: Homebridge.CharacteristicSetCallback,
+          ) => {
+            this.log(`Setting target temperature: ${value}`);
 
-          this.updateUserState({
-            targetTemperature: clampTemperature(
-              value,
-              SENSIBO_TEMPERATURE_RANGE,
-            ),
-          });
+            if (typeof value === 'number') {
+              this.updateUserState({
+                targetTemperature: clampTemperature(
+                  value,
+                  SENSIBO_TEMPERATURE_RANGE,
+                ),
+              });
+            } else {
+              this.log.warn(
+                `Target temperature had unexpected type of ${typeof value}`,
+              );
+            }
 
-          callback();
-        });
+            callback();
+          },
+        );
 
       // Heating Threshold Temperature Characteristic
       thermostatService
         .getCharacteristic(Characteristic.HeatingThresholdTemperature)
         .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
         .setValue(this.userState.heatingThresholdTemperature)
-        .on('set', (value: any, callback: () => void) => {
-          this.log(`Setting heating threshold: ${value}`);
+        .on(
+          Homebridge.CharacteristicEventTypes.SET,
+          (
+            value: Homebridge.CharacteristicValue,
+            callback: Homebridge.CharacteristicSetCallback,
+          ) => {
+            this.log(`Setting heating threshold: ${value}`);
 
-          this.updateUserState({
-            heatingThresholdTemperature: clampTemperature(
-              value,
-              TARGET_TEMPERATURE_RANGE,
-            ),
-          });
+            if (typeof value === 'number') {
+              this.updateUserState({
+                heatingThresholdTemperature: clampTemperature(
+                  value,
+                  TARGET_TEMPERATURE_RANGE,
+                ),
+              });
+            } else {
+              this.log.warn(
+                `Heating threshold had unexpected type of ${typeof value}`,
+              );
+            }
 
-          callback();
-        });
+            callback();
+          },
+        );
 
       // Cooling Threshold Temperature Characteristic
       thermostatService
         .getCharacteristic(Characteristic.CoolingThresholdTemperature)
         .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
         .setValue(this.userState.coolingThresholdTemperature)
-        .on('set', (value: any, callback: () => void) => {
-          this.log(`Setting cooling threshold: ${value}`);
+        .on(
+          Homebridge.CharacteristicEventTypes.SET,
+          (
+            value: Homebridge.CharacteristicValue,
+            callback: Homebridge.CharacteristicSetCallback,
+          ) => {
+            this.log(`Setting cooling threshold: ${value}`);
 
-          this.updateUserState({
-            coolingThresholdTemperature: clampTemperature(
-              value,
-              TARGET_TEMPERATURE_RANGE,
-            ),
-          });
+            if (typeof value === 'number') {
+              this.updateUserState({
+                coolingThresholdTemperature: clampTemperature(
+                  value,
+                  TARGET_TEMPERATURE_RANGE,
+                ),
+              });
+            } else {
+              this.log.warn(
+                `Cooling threshold had unexpected type of ${typeof value}`,
+              );
+            }
 
-          callback();
-        });
+            callback();
+          },
+        );
 
       // We don't need to wait for the AC state to do this
       if (this.userState.autoMode) {
@@ -216,12 +260,12 @@ export default (hap: any) => {
       this.pollSensibo().catch((err) => this.log.warn(err));
     }
 
-    getServices(): any[] {
+    getServices(): Homebridge.Service[] {
       return this.services;
     }
 
     identify(): void {
-      this.log('Identify! (name: %s)', this.name);
+      this.log('Identify! (name: %s)', this.displayName);
     }
 
     private async pollSensibo(): Promise<void> {
@@ -272,12 +316,12 @@ export default (hap: any) => {
 
       const [newMeasurement] = measurements;
 
-      this.getService(Service.Thermostat).updateCharacteristic(
+      this.getService(Service.Thermostat)!.updateCharacteristic(
         Characteristic.CurrentTemperature,
         newMeasurement.temperature,
       );
 
-      this.getService(Service.Thermostat).updateCharacteristic(
+      this.getService(Service.Thermostat)!.updateCharacteristic(
         Characteristic.CurrentRelativeHumidity,
         Math.round(newMeasurement.humidity),
       );
@@ -338,19 +382,21 @@ export default (hap: any) => {
     }
 
     private updateCharacteristicsForAutoMode(userState: UserState): void {
-      this.getService(Service.Thermostat)
-        .updateCharacteristic(
-          Characteristic.TargetHeatingCoolingState,
-          Characteristic.TargetHeatingCoolingState.AUTO,
-        )
-        .updateCharacteristic(
-          Characteristic.TargetTemperature,
-          userState.targetTemperature,
-        );
+      if (typeof userState.targetTemperature !== 'undefined') {
+        this.getService(Service.Thermostat)!
+          .updateCharacteristic(
+            Characteristic.TargetHeatingCoolingState,
+            Characteristic.TargetHeatingCoolingState.AUTO,
+          )
+          .updateCharacteristic(
+            Characteristic.TargetTemperature,
+            userState.targetTemperature,
+          );
+      }
     }
 
     private updateCharacteristicsForManualMode(acState: AcState): void {
-      this.getService(Service.Thermostat)
+      this.getService(Service.Thermostat)!
         .updateCharacteristic(
           Characteristic.TargetHeatingCoolingState,
           heatingCoolingStateForAcState(
@@ -368,7 +414,7 @@ export default (hap: any) => {
       acState: AcState,
       userState: UserState,
     ): void {
-      const thermostatService = this.getService(Service.Thermostat);
+      const thermostatService = this.getService(Service.Thermostat)!;
 
       // Current heating/cooling state
       thermostatService.updateCharacteristic(
