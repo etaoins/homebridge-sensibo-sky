@@ -18,24 +18,30 @@ import {
 } from '../lib/temperature';
 import type { SensiboPlatform } from '../index';
 
-function heatingCoolingStateForAcState(acState: AcState, characteristic: any) {
-  if (acState.on === false) {
-    return characteristic.OFF;
-  }
-
-  switch (acState.mode) {
-    case 'cool':
-      return characteristic.COOL;
-    case 'heat':
-      return characteristic.HEAT;
-    default:
-      return characteristic.OFF;
-  }
-}
-
 // Pod Accessory
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default (hap: Homebridge.HAP) => {
   const { Service, Characteristic, Accessory, uuid } = hap;
+
+  const heatingCoolingStateForAcState = (
+    acState: AcState,
+    characteristic:
+      | typeof Characteristic.TargetHeatingCoolingState
+      | typeof Characteristic.CurrentHeatingCoolingState,
+  ) => {
+    if (acState.on === false) {
+      return characteristic.OFF;
+    }
+
+    switch (acState.mode) {
+      case 'cool':
+        return characteristic.COOL;
+      case 'heat':
+        return characteristic.HEAT;
+      default:
+        return characteristic.OFF;
+    }
+  };
 
   return class SensiboPodAccessory extends Accessory {
     static deviceGroup = 'pods';
@@ -173,7 +179,7 @@ export default (hap: Homebridge.HAP) => {
             value: Homebridge.CharacteristicValue,
             callback: Homebridge.CharacteristicSetCallback,
           ) => {
-            this.log(`Setting target temperature: ${value}`);
+            this.log(`Setting target temperature: ${value.toString()}`);
 
             if (typeof value === 'number') {
               this.updateUserState({
@@ -203,7 +209,7 @@ export default (hap: Homebridge.HAP) => {
             value: Homebridge.CharacteristicValue,
             callback: Homebridge.CharacteristicSetCallback,
           ) => {
-            this.log(`Setting heating threshold: ${value}`);
+            this.log(`Setting heating threshold: ${value.toString()}`);
 
             if (typeof value === 'number') {
               this.updateUserState({
@@ -233,7 +239,7 @@ export default (hap: Homebridge.HAP) => {
             value: Homebridge.CharacteristicValue,
             callback: Homebridge.CharacteristicSetCallback,
           ) => {
-            this.log(`Setting cooling threshold: ${value}`);
+            this.log(`Setting cooling threshold: ${value.toString()}`);
 
             if (typeof value === 'number') {
               this.updateUserState({
@@ -279,7 +285,11 @@ export default (hap: Homebridge.HAP) => {
 
       global.setTimeout(() => {
         this.pollSensibo().catch((err) => {
-          this.log.warn(err.message);
+          if (err instanceof Error) {
+            this.log.warn(err.message);
+          } else {
+            this.log.warn('Caught non-error', err);
+          }
         });
       }, pollNextMeasurementInMs(this.log.bind(this.log), newMeasurement));
 
@@ -465,10 +475,14 @@ export default (hap: Homebridge.HAP) => {
           this.platform.config,
           this.deviceId,
           newUserState,
-        ).catch((err) => this.log.warn(`Error saving state: ${err}`));
+        ).catch((err) => this.log.warn(`Error saving state: ${String(err)}`));
 
         this.updateAcState({}).catch((err) => {
-          this.log.warn(err.message);
+          if (err instanceof Error) {
+            this.log.warn(err.message);
+          } else {
+            this.log.warn('Caught non-error', err);
+          }
         });
       }, 500);
     }
