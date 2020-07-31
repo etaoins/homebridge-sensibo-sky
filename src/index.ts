@@ -18,7 +18,9 @@ export class SensiboPlatform implements Homebridge.StaticPlatformPlugin {
     this.sensiboClient = new SensiboClient(this.config.apiKey);
   }
 
-  accessories(callback: (accessories: Homebridge.AccessoryPlugin[]) => void) {
+  accessories(
+    callback: (accessories: Homebridge.AccessoryPlugin[]) => void,
+  ): void {
     this.log('Fetching Sensibo devices...');
 
     const SensiboPodAccessory = createSensiboPodAccessory(
