@@ -41,16 +41,24 @@ export const restoreUserState = (
     return DEFAULT_USER_STATE;
   }
 
+  let parsedContent: unknown;
   try {
-    // eslint-disable-next-line no-sync
-    const fileContent = fs.readFileSync(filename, { encoding: 'utf8' });
-    return {
-      ...DEFAULT_USER_STATE,
-      ...JSON.parse(fileContent),
-    };
+    parsedContent = JSON.parse(
+      // eslint-disable-next-line no-sync
+      fs.readFileSync(filename, { encoding: 'utf8' }),
+    ) as unknown;
   } catch {
     return DEFAULT_USER_STATE;
   }
+
+  if (typeof parsedContent !== 'object') {
+    return DEFAULT_USER_STATE;
+  }
+
+  return {
+    ...DEFAULT_USER_STATE,
+    ...parsedContent,
+  };
 };
 
 // istanbul ignore next

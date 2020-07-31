@@ -81,6 +81,15 @@ describe('restoreUserState', () => {
     ).toStrictEqual(DEFAULT_USER_STATE);
   });
 
+  it('should return a default state with a state file with non-object JSNON', () => {
+    expect(
+      restoreUserState(
+        { userStateDirectory: './src/fixtures/userState' },
+        'nonobject',
+      ),
+    ).toStrictEqual(DEFAULT_USER_STATE);
+  });
+
   it('should return a saved state file with valid JSON', () => {
     expect(
       restoreUserState(
