@@ -2,7 +2,7 @@ import type * as Homebridge from 'homebridge';
 
 import { SensiboClient } from './lib/sensiboClient';
 import { Config } from './lib/config';
-import createSensiboPodAccessory from './accessories/pods';
+import { SensiboPodAccessory } from './accessories/pods';
 
 export class SensiboPlatform implements Homebridge.StaticPlatformPlugin {
   sensiboClient: SensiboClient;
@@ -23,10 +23,6 @@ export class SensiboPlatform implements Homebridge.StaticPlatformPlugin {
   ): void {
     this.log('Fetching Sensibo devices...');
 
-    const SensiboPodAccessory = createSensiboPodAccessory(
-      this.homebridgeApi.hap,
-    );
-
     const fetchAccessories = () => {
       const MAX_RETRY_DELAY_SECS = 80;
       let retryDelaySecs = 5;
@@ -44,7 +40,11 @@ export class SensiboPlatform implements Homebridge.StaticPlatformPlugin {
           }
 
           const foundAccessories = devices.map((device) => {
-            const accessory = new SensiboPodAccessory(this, device);
+            const accessory = new SensiboPodAccessory(
+              this.homebridgeApi.hap,
+              this,
+              device,
+            );
 
             this.log(
               'Device Added (Name: %s, ID: %s)',
