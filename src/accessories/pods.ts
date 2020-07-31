@@ -21,7 +21,7 @@ import type { SensiboPlatform } from '../index';
 // Pod Accessory
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default (hap: Homebridge.HAP) => {
-  const { Service, Characteristic, Accessory, uuid } = hap;
+  const { Characteristic } = hap;
 
   const heatingCoolingStateForAcState = (
     acState: AcState,
@@ -43,9 +43,10 @@ export default (hap: Homebridge.HAP) => {
     }
   };
 
-  return class SensiboPodAccessory extends Accessory {
+  return class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
     static deviceGroup = 'pods';
     public deviceId: string;
+    public name: string;
 
     private platform: SensiboPlatform;
     private log: Homebridge.Logging;
@@ -54,16 +55,17 @@ export default (hap: Homebridge.HAP) => {
     private roomMeasurement?: Measurement;
     private userState: UserState;
 
+    private readonly informationService: Homebridge.Service;
+    private readonly thermostatService: Homebridge.Service;
+
     /**
      * Timeout for debouncing user state changes
      */
     userStateApplyTimeout?: NodeJS.Timer;
 
     constructor(platform: SensiboPlatform, device: Device) {
-      const id = uuid.generate(`sensibo-sky:pod:${device.id}`);
-      super(device.room.name, id);
-
       this.deviceId = device.id;
+      this.name = device.room.name;
       this.platform = platform;
       this.log = platform.log;
 
@@ -79,30 +81,22 @@ export default (hap: Homebridge.HAP) => {
 
       this.userState = restoreUserState(this.platform.config, this.deviceId);
 
-      // AccessoryInformation characteristic
-      // Manufacturer characteristic
-      this.getService(Service.AccessoryInformation)!.setCharacteristic(
-        Characteristic.Manufacturer,
-        'homebridge-sensibo-sky',
-      );
-
-      // Model characteristic
-      this.getService(Service.AccessoryInformation)!.setCharacteristic(
-        Characteristic.Model,
-        'version 0.2.1',
-      );
-
-      // SerialNumber characteristic
-      this.getService(Service.AccessoryInformation)!.setCharacteristic(
-        Characteristic.SerialNumber,
-        `Pod ID: ${this.deviceId}`,
-      );
+      this.informationService = new hap.Service.AccessoryInformation()
+        .setCharacteristic(
+          Characteristic.Manufacturer,
+          'homebridge-sensibo-sky',
+        )
+        .setCharacteristic(Characteristic.Model, 'version 0.2.1')
+        .setCharacteristic(
+          Characteristic.SerialNumber,
+          `Pod ID: ${this.deviceId}`,
+        );
 
       // Thermostat Service
-      const thermostatService = this.addService(Service.Thermostat);
+      this.thermostatService = new hap.Service.Thermostat();
 
       // Current Temperature characteristic
-      thermostatService
+      this.thermostatService
         .getCharacteristic(Characteristic.CurrentTemperature)
         .setProps({
           unit: Characteristic.Units.CELSIUS,
@@ -111,7 +105,7 @@ export default (hap: Homebridge.HAP) => {
         });
 
       // Target Heating/Cooling Mode characteristic
-      thermostatService
+      this.thermostatService
         .getCharacteristic(Characteristic.TargetHeatingCoolingState)
         .on(
           Homebridge.CharacteristicEventTypes.SET,
@@ -170,7 +164,7 @@ export default (hap: Homebridge.HAP) => {
       };
 
       // Target Temperature characteristic
-      thermostatService
+      this.thermostatService
         .getCharacteristic(Characteristic.TargetTemperature)
         .setProps({ ...commonTemperatureProps, ...SENSIBO_TEMPERATURE_RANGE })
         .on(
@@ -199,7 +193,7 @@ export default (hap: Homebridge.HAP) => {
         );
 
       // Heating Threshold Temperature Characteristic
-      thermostatService
+      this.thermostatService
         .getCharacteristic(Characteristic.HeatingThresholdTemperature)
         .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
         .setValue(this.userState.heatingThresholdTemperature)
@@ -229,7 +223,7 @@ export default (hap: Homebridge.HAP) => {
         );
 
       // Cooling Threshold Temperature Characteristic
-      thermostatService
+      this.thermostatService
         .getCharacteristic(Characteristic.CoolingThresholdTemperature)
         .setProps({ ...commonTemperatureProps, ...TARGET_TEMPERATURE_RANGE })
         .setValue(this.userState.coolingThresholdTemperature)
@@ -267,11 +261,11 @@ export default (hap: Homebridge.HAP) => {
     }
 
     getServices(): Homebridge.Service[] {
-      return this.services;
+      return [this.informationService, this.thermostatService];
     }
 
     identify(): void {
-      this.log('Identify! (name: %s)', this.displayName);
+      this.log('Identify! (name: %s)', this.name);
     }
 
     private async pollSensibo(): Promise<void> {
@@ -326,12 +320,12 @@ export default (hap: Homebridge.HAP) => {
 
       const [newMeasurement] = measurements;
 
-      this.getService(Service.Thermostat)!.updateCharacteristic(
+      this.thermostatService.updateCharacteristic(
         Characteristic.CurrentTemperature,
         newMeasurement.temperature,
       );
 
-      this.getService(Service.Thermostat)!.updateCharacteristic(
+      this.thermostatService.updateCharacteristic(
         Characteristic.CurrentRelativeHumidity,
         Math.round(newMeasurement.humidity),
       );
@@ -393,7 +387,7 @@ export default (hap: Homebridge.HAP) => {
 
     private updateCharacteristicsForAutoMode(userState: UserState): void {
       if (typeof userState.targetTemperature !== 'undefined') {
-        this.getService(Service.Thermostat)!
+        this.thermostatService
           .updateCharacteristic(
             Characteristic.TargetHeatingCoolingState,
             Characteristic.TargetHeatingCoolingState.AUTO,
@@ -406,7 +400,7 @@ export default (hap: Homebridge.HAP) => {
     }
 
     private updateCharacteristicsForManualMode(acState: AcState): void {
-      this.getService(Service.Thermostat)!
+      this.thermostatService
         .updateCharacteristic(
           Characteristic.TargetHeatingCoolingState,
           heatingCoolingStateForAcState(
@@ -424,10 +418,8 @@ export default (hap: Homebridge.HAP) => {
       acState: AcState,
       userState: UserState,
     ): void {
-      const thermostatService = this.getService(Service.Thermostat)!;
-
       // Current heating/cooling state
-      thermostatService.updateCharacteristic(
+      this.thermostatService.updateCharacteristic(
         Characteristic.CurrentHeatingCoolingState,
         heatingCoolingStateForAcState(
           acState,
@@ -436,7 +428,7 @@ export default (hap: Homebridge.HAP) => {
       );
 
       // Temperature Display Units characteristic
-      thermostatService.updateCharacteristic(
+      this.thermostatService.updateCharacteristic(
         Characteristic.TemperatureDisplayUnits,
         acState.temperatureUnit === 'F'
           ? Characteristic.TemperatureDisplayUnits.FAHRENHEIT

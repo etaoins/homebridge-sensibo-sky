@@ -48,7 +48,7 @@ export class SensiboPlatform implements Homebridge.StaticPlatformPlugin {
 
             this.log(
               'Device Added (Name: %s, ID: %s)',
-              accessory.displayName,
+              accessory.name,
               accessory.deviceId,
             );
 
