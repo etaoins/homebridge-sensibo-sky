@@ -31,7 +31,7 @@ export const calculateDesiredAcState = (
     coolingThresholdTemperature,
   } = input;
 
-  log(
+  log.debug(
     'Calculating desired state (roomTemp: %s, mode: %s, heatingThresh %s, coolingThresh: %s)',
     roomMeasurement.temperature,
     prevState.on ? prevState.mode : 'off',
@@ -50,7 +50,9 @@ export const calculateDesiredAcState = (
 
   if (roomMeasurement.temperature > coolingThresholdTemperature) {
     if (prevState.mode !== 'cool' || prevState.on !== true) {
-      log('Hotter than cooling threshold, switching to cool mode');
+      log(
+        `Hotter (${roomMeasurement.temperature}) than cooling threshold (${coolingThresholdTemperature}), switching to cool mode`,
+      );
     }
 
     nextState.mode = 'cool';
@@ -65,7 +67,9 @@ export const calculateDesiredAcState = (
     nextState.on = true;
   } else if (roomMeasurement.temperature < heatingThresholdTemperature) {
     if (prevState.mode !== 'heat' || prevState.on !== true) {
-      log('Colder than heating threshold, switching to heat mode');
+      log(
+        `Colder (${roomMeasurement.temperature}) than heating threshold (${heatingThresholdTemperature}), switching to heat mode`,
+      );
     }
 
     nextState.mode = 'heat';
@@ -85,7 +89,9 @@ export const calculateDesiredAcState = (
       roomMeasurement.temperature < midPointTemperature)
   ) {
     if (prevState.on === true) {
-      log('Crossed temperature mid-point, switching off');
+      log(
+        `Crossed (${roomMeasurement.temperature}) temperature mid-point (${midPointTemperature}), switching off`,
+      );
       nextState.on = false;
     }
   }

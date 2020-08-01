@@ -283,7 +283,7 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
           this.log.warn('Caught non-error', err);
         }
       });
-    }, pollNextMeasurementInMs(this.log.bind(this.log), newMeasurement));
+    }, pollNextMeasurementInMs(this.log, newMeasurement));
 
     const newAcState = await this.refreshAcState();
 
@@ -498,7 +498,7 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
     if (autoMode) {
       if (this.roomMeasurement) {
         newAcState = calculateDesiredAcState(
-          this.log.bind(this.log),
+          this.log,
           {
             roomMeasurement: this.roomMeasurement,
             heatingThresholdTemperature,

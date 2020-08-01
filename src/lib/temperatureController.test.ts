@@ -1,3 +1,5 @@
+import * as Homebridge from 'homebridge';
+
 import { calculateDesiredAcState } from './temperatureController';
 import { AcState } from './acState';
 
@@ -9,14 +11,28 @@ const MOCK_AC_STATE: AcState = {
   fanLevel: 'low',
 };
 
+const mockLogging = (): Homebridge.Logging => {
+  const log = jest.fn();
+
+  Object.assign(log, {
+    debug: jest.fn(),
+    info: jest.fn(),
+    log,
+    warn: jest.fn(),
+    error: jest.fn(),
+  });
+
+  return (log as unknown) as Homebridge.Logging;
+};
+
 describe('calculateDesiredAcState', () => {
   afterEach(() => jest.restoreAllMocks());
 
   it('should do nothing if the temperature is in range and the unit is off', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 21.0,
@@ -27,15 +43,14 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: false },
     );
 
-    expect(log).toBeCalledTimes(1);
     expect(nextState).toMatchObject({ on: false });
   });
 
   it('should heat on low if the temperature is 1C below range and the unit is off', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 18.0,
@@ -46,9 +61,9 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: false },
     );
 
-    expect(log).toBeCalledTimes(2);
+    expect(log).toBeCalledTimes(1);
     expect(log).toBeCalledWith(
-      'Colder than heating threshold, switching to heat mode',
+      'Colder (18) than heating threshold (19), switching to heat mode',
     );
     expect(nextState).toMatchObject({
       fanLevel: 'low',
@@ -59,10 +74,10 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should heat on medium if the temperature is 2C below range and the unit is cooling', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 17.0,
@@ -73,9 +88,9 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: true, mode: 'cool' },
     );
 
-    expect(log).toBeCalledTimes(2);
+    expect(log).toBeCalledTimes(1);
     expect(log).toBeCalledWith(
-      'Colder than heating threshold, switching to heat mode',
+      'Colder (17) than heating threshold (19), switching to heat mode',
     );
     expect(nextState).toMatchObject({
       fanLevel: 'medium',
@@ -86,10 +101,10 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should heat on high if the temperature is 5C below range and the unit is off', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 14.0,
@@ -100,9 +115,9 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: false },
     );
 
-    expect(log).toBeCalledTimes(2);
+    expect(log).toBeCalledTimes(1);
     expect(log).toBeCalledWith(
-      'Colder than heating threshold, switching to heat mode',
+      'Colder (14) than heating threshold (19), switching to heat mode',
     );
     expect(nextState).toMatchObject({
       fanLevel: 'high',
@@ -113,10 +128,10 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should do nothing if the temperature is below range and the unit is heating', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 14.0,
@@ -127,7 +142,7 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: true, mode: 'heat' },
     );
 
-    expect(log).toBeCalledTimes(1);
+    expect(log).not.toBeCalled();
     expect(nextState).toMatchObject({
       fanLevel: 'high',
       mode: 'heat',
@@ -137,10 +152,10 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should cool on medium if the temperature is 3C above range and the unit is off', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 26.0,
@@ -151,9 +166,9 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: false },
     );
 
-    expect(log).toBeCalledTimes(2);
+    expect(log).toBeCalledTimes(1);
     expect(log).toBeCalledWith(
-      'Hotter than cooling threshold, switching to cool mode',
+      'Hotter (26) than cooling threshold (23), switching to cool mode',
     );
     expect(nextState).toMatchObject({
       fanLevel: 'medium',
@@ -164,10 +179,10 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should cool on high if the temperature is 5C above range and the unit is heating', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 28.0,
@@ -178,9 +193,9 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: true, mode: 'heat' },
     );
 
-    expect(log).toBeCalledTimes(2);
+    expect(log).toBeCalledTimes(1);
     expect(log).toBeCalledWith(
-      'Hotter than cooling threshold, switching to cool mode',
+      'Hotter (28) than cooling threshold (23), switching to cool mode',
     );
     expect(nextState).toMatchObject({
       fanLevel: 'high',
@@ -191,10 +206,10 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should do nothing if the temperature is above range and the unit is cooling', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 26.0,
@@ -205,7 +220,7 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: true, mode: 'cool' },
     );
 
-    expect(log).toBeCalledTimes(1);
+    expect(log).not.toBeCalled();
     expect(nextState).toMatchObject({
       fanLevel: 'medium',
       mode: 'cool',
@@ -215,10 +230,10 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should do nothing if cooling while hotter than target temperature', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 22.0,
@@ -229,7 +244,7 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: true, mode: 'cool' },
     );
 
-    expect(log).toBeCalledTimes(1);
+    expect(log).not.toBeCalled();
     expect(nextState).toMatchObject({
       mode: 'cool',
       on: true,
@@ -237,10 +252,10 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should do nothing if heating while cooler than target temperature', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 20.0,
@@ -251,7 +266,7 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: true, mode: 'heat' },
     );
 
-    expect(log).toBeCalledTimes(1);
+    expect(log).not.toBeCalled();
     expect(nextState).toMatchObject({
       mode: 'heat',
       on: true,
@@ -259,7 +274,7 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should turn off if cooling while cooler than target temperature', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
       log as any,
@@ -273,8 +288,10 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: true, mode: 'cool' },
     );
 
-    expect(log).toBeCalledTimes(2);
-    expect(log).toBeCalledWith('Crossed temperature mid-point, switching off');
+    expect(log).toBeCalledTimes(1);
+    expect(log).toBeCalledWith(
+      'Crossed (20) temperature mid-point (21), switching off',
+    );
     expect(nextState).toMatchObject({
       mode: 'cool',
       on: false,
@@ -282,10 +299,10 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should turn off if heating while hotter than target temperature', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 22.0,
@@ -296,8 +313,10 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: true, mode: 'heat' },
     );
 
-    expect(log).toBeCalledTimes(2);
-    expect(log).toBeCalledWith('Crossed temperature mid-point, switching off');
+    expect(log).toBeCalledTimes(1);
+    expect(log).toBeCalledWith(
+      'Crossed (22) temperature mid-point (21), switching off',
+    );
     expect(nextState).toMatchObject({
       mode: 'heat',
       on: false,
@@ -305,10 +324,10 @@ describe('calculateDesiredAcState', () => {
   });
 
   it('should do nothing while crossing the target temperature while off', () => {
-    const log = jest.fn();
+    const log = mockLogging();
 
     const nextState = calculateDesiredAcState(
-      log as any,
+      log,
       {
         roomMeasurement: {
           temperature: 22.0,
@@ -319,7 +338,7 @@ describe('calculateDesiredAcState', () => {
       { ...MOCK_AC_STATE, on: false, mode: 'heat' },
     );
 
-    expect(log).toBeCalledTimes(1);
+    expect(log).not.toBeCalled();
     expect(nextState).toMatchObject({
       mode: 'heat',
       on: false,
