@@ -1,4 +1,4 @@
-export type AcMode = 'heat' | 'cool';
+export type AcMode = 'cool' | 'heat' | 'fan' | 'auto' | 'dry';
 export type FanLevel = 'auto' | 'low' | 'medium' | 'high';
 
 export interface AcState {
