@@ -8,11 +8,8 @@ import {
   clampTemperature,
 } from './temperature';
 
-// This replaces `cool` mode with `dry` for low deviations
-const HIGH_HUMIDITY = 60;
-
 function fanLevelForTemperatureDeviation(deviation: number): FanLevel {
-  if (deviation > 6.0) {
+  if (deviation > 7.0) {
     return 'strong';
   } else if (deviation > 4.0) {
     return 'high';
@@ -21,6 +18,21 @@ function fanLevelForTemperatureDeviation(deviation: number): FanLevel {
   }
 
   return 'low';
+}
+
+function shouldDryForTemperatureDeviation(
+  humidity: number,
+  deviation: number,
+): boolean {
+  if (deviation > 7.0) {
+    return false;
+  } else if (deviation > 4.0) {
+    return humidity > 90;
+  } else if (deviation > 1.0) {
+    return humidity > 75;
+  }
+
+  return humidity > 60;
 }
 
 interface AutoModeInput {
@@ -61,15 +73,15 @@ export const calculateDesiredAcState = (
     (heatingThresholdTemperature + coolingThresholdTemperature) / 2;
 
   if (roomMeasurement.temperature > coolingThresholdTemperature) {
-    const fanLevel = fanLevelForTemperatureDeviation(
-      roomMeasurement.temperature - coolingThresholdTemperature,
-    );
+    const deviation = roomMeasurement.temperature - coolingThresholdTemperature;
 
-    if (fanLevel === 'low' && roomMeasurement.humidity > HIGH_HUMIDITY) {
+    if (shouldDryForTemperatureDeviation(roomMeasurement.humidity, deviation)) {
       // Switch to `dry` mode. This is less effective at cooling but is more dehumidifying.
       nextState.mode = 'dry';
       delete nextState.fanLevel;
     } else {
+      const fanLevel = fanLevelForTemperatureDeviation(deviation);
+
       nextState.mode = 'cool';
       nextState.fanLevel = fanLevel;
     }
