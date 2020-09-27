@@ -5,7 +5,7 @@ export interface AcState {
   on: boolean;
   targetTemperature: number;
   mode: AcMode;
-  fanLevel: FanLevel;
+  fanLevel?: FanLevel;
   temperatureUnit: 'F' | 'C';
 }
 

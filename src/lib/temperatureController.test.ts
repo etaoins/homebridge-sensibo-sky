@@ -36,6 +36,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 21.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -54,6 +55,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 18.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -81,6 +83,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 17.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -108,6 +111,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 14.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -135,6 +139,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 14.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -151,6 +156,61 @@ describe('calculateDesiredAcState', () => {
     });
   });
 
+  it('should dry if the temperature is 1C above range, humidity is above range and the unit is off', () => {
+    const log = mockLogging();
+
+    const nextState = calculateDesiredAcState(
+      log,
+      {
+        roomMeasurement: {
+          temperature: 24.0,
+          humidity: 80,
+        },
+        heatingThresholdTemperature: 19.0,
+        coolingThresholdTemperature: 23.0,
+      },
+      { ...MOCK_AC_STATE, on: false },
+    );
+
+    expect(log).toBeCalledTimes(1);
+    expect(log).toBeCalledWith(
+      'Hotter (24) than cooling threshold (23), switching to dry mode',
+    );
+    expect(nextState).toMatchObject({
+      mode: 'dry',
+      on: true,
+      targetTemperature: 19,
+    });
+  });
+
+  it('should cool on low if the temperature is 1C above range, humidity is within range and the unit is off', () => {
+    const log = mockLogging();
+
+    const nextState = calculateDesiredAcState(
+      log,
+      {
+        roomMeasurement: {
+          temperature: 24.0,
+          humidity: 40,
+        },
+        heatingThresholdTemperature: 19.0,
+        coolingThresholdTemperature: 23.0,
+      },
+      { ...MOCK_AC_STATE, on: false },
+    );
+
+    expect(log).toBeCalledTimes(1);
+    expect(log).toBeCalledWith(
+      'Hotter (24) than cooling threshold (23), switching to cool mode',
+    );
+    expect(nextState).toMatchObject({
+      fanLevel: 'low',
+      mode: 'cool',
+      on: true,
+      targetTemperature: 19,
+    });
+  });
+
   it('should cool on medium if the temperature is 3C above range and the unit is off', () => {
     const log = mockLogging();
 
@@ -159,6 +219,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 26.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -186,6 +247,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 28.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -213,6 +275,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 26.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -237,6 +300,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 22.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -259,6 +323,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 20.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -281,6 +346,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 20.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -306,6 +372,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 22.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
@@ -331,6 +398,7 @@ describe('calculateDesiredAcState', () => {
       {
         roomMeasurement: {
           temperature: 22.0,
+          humidity: 40,
         },
         heatingThresholdTemperature: 19.0,
         coolingThresholdTemperature: 23.0,
