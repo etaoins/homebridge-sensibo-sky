@@ -8,6 +8,8 @@ import {
   clampTemperature,
 } from './temperature';
 
+const HUMIDITY_MIDPOINT = 40;
+
 function fanLevelForTemperatureDeviation(deviation: number): FanLevel {
   if (deviation > 7.0) {
     return 'strong';
@@ -127,6 +129,18 @@ export const calculateDesiredAcState = (
         `Crossed (${roomMeasurement.temperature}) temperature mid-point (${midPointTemperature}), switching off`,
       );
     }
+  } else if (
+    prevState.mode === 'dry' &&
+    roomMeasurement.humidity < HUMIDITY_MIDPOINT
+  ) {
+    // This is only reachable between the temperature mid-point and cooling threshold
+    nextState.mode = 'cool';
+    nextState.fanLevel = 'low';
+    nextState.on = true;
+
+    log(
+      `Dried (${roomMeasurement.humidity}) to humidity mid-point (${HUMIDITY_MIDPOINT}), switching to cool mode`,
+    );
   }
 
   return nextState;

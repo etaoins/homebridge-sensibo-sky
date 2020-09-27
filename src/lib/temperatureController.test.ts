@@ -468,4 +468,31 @@ describe('calculateDesiredAcState', () => {
       on: false,
     });
   });
+
+  it('should switch to cool mode if drying below the minimum humidity', () => {
+    const log = mockLogging();
+
+    const nextState = calculateDesiredAcState(
+      log as any,
+      {
+        roomMeasurement: {
+          temperature: 22.0,
+          humidity: 35,
+        },
+        heatingThresholdTemperature: 19.0,
+        coolingThresholdTemperature: 23.0,
+      },
+      { ...MOCK_AC_STATE, on: true, mode: 'dry' },
+    );
+
+    expect(log).toBeCalledTimes(1);
+    expect(log).toBeCalledWith(
+      'Dried (35) to humidity mid-point (40), switching to cool mode',
+    );
+    expect(nextState).toMatchObject({
+      mode: 'cool',
+      fanLevel: 'low',
+      on: true,
+    });
+  });
 });
