@@ -11,7 +11,7 @@ import {
   UserState,
 } from '../lib/userState';
 import {
-  SENSIBO_TEMPERATURE_RANGE,
+  SENSIBO_AUTO_TEMPERATURE_RANGE,
   TARGET_TEMPERATURE_RANGE,
   clampTemperature,
   fahrenheitToCelsius,
@@ -164,7 +164,10 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
     // Target Temperature characteristic
     this.thermostatService
       .getCharacteristic(hap.Characteristic.TargetTemperature)
-      .setProps({ ...commonTemperatureProps, ...SENSIBO_TEMPERATURE_RANGE })
+      .setProps({
+        ...commonTemperatureProps,
+        ...SENSIBO_AUTO_TEMPERATURE_RANGE,
+      })
       .on(
         Homebridge.CharacteristicEventTypes.SET,
         (
@@ -177,7 +180,7 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
             this.updateUserState({
               targetTemperature: clampTemperature(
                 value,
-                SENSIBO_TEMPERATURE_RANGE,
+                SENSIBO_AUTO_TEMPERATURE_RANGE,
               ),
             });
           } else {

@@ -4,16 +4,23 @@ export interface TemperatureRange {
   minStep: number;
 }
 
-export const SENSIBO_TEMPERATURE_RANGE: TemperatureRange = {
-  // This limited to what Sensibo/AC unit understand
+export const SENSIBO_HEATING_TEMPERATURE_RANGE: TemperatureRange = {
+  minValue: 10,
+  maxValue: 30,
+  minStep: 1,
+};
+
+export const SENSIBO_COOLING_TEMPERATURE_RANGE: TemperatureRange = {
   minValue: 18,
   maxValue: 30,
   minStep: 1,
 };
 
+export const SENSIBO_AUTO_TEMPERATURE_RANGE = SENSIBO_COOLING_TEMPERATURE_RANGE;
+
 export const TARGET_TEMPERATURE_RANGE: TemperatureRange = {
   // This is virtual so we can accept more values
-  minValue: 16,
+  minValue: 10,
   maxValue: 30,
   minStep: 0.5,
 };

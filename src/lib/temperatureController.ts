@@ -2,7 +2,11 @@ import * as Homebridge from 'homebridge';
 
 import { AcMode, AcState, FanLevel } from './acState';
 import { Measurement } from './measurement';
-import { SENSIBO_TEMPERATURE_RANGE, clampTemperature } from './temperature';
+import {
+  SENSIBO_HEATING_TEMPERATURE_RANGE,
+  SENSIBO_COOLING_TEMPERATURE_RANGE,
+  clampTemperature,
+} from './temperature';
 
 // This replaces `cool` mode with `dry` for low deviations
 const HIGH_HUMIDITY = 60;
@@ -53,10 +57,8 @@ export const calculateDesiredAcState = (
     ...prevState,
   };
 
-  const midPointTemperature = clampTemperature(
-    (heatingThresholdTemperature + coolingThresholdTemperature) / 2,
-    SENSIBO_TEMPERATURE_RANGE,
-  );
+  const midPointTemperature =
+    (heatingThresholdTemperature + coolingThresholdTemperature) / 2;
 
   if (roomMeasurement.temperature > coolingThresholdTemperature) {
     const fanLevel = fanLevelForTemperatureDeviation(
@@ -74,7 +76,7 @@ export const calculateDesiredAcState = (
 
     nextState.targetTemperature = clampTemperature(
       heatingThresholdTemperature,
-      SENSIBO_TEMPERATURE_RANGE,
+      SENSIBO_COOLING_TEMPERATURE_RANGE,
     );
     nextState.on = true;
 
@@ -91,7 +93,7 @@ export const calculateDesiredAcState = (
 
     nextState.targetTemperature = clampTemperature(
       coolingThresholdTemperature,
-      SENSIBO_TEMPERATURE_RANGE,
+      SENSIBO_HEATING_TEMPERATURE_RANGE,
     );
     nextState.on = true;
 
