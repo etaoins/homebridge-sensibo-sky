@@ -131,6 +131,34 @@ describe('calculateDesiredAcState', () => {
     });
   });
 
+  it('should heat on strong if the temperature is 8C below range and the unit is off', () => {
+    const log = mockLogging();
+
+    const nextState = calculateDesiredAcState(
+      log,
+      {
+        roomMeasurement: {
+          temperature: 11.0,
+          humidity: 40,
+        },
+        heatingThresholdTemperature: 19.0,
+        coolingThresholdTemperature: 23.0,
+      },
+      { ...MOCK_AC_STATE, on: false },
+    );
+
+    expect(log).toBeCalledTimes(1);
+    expect(log).toBeCalledWith(
+      'Colder (11) than heating threshold (19), switching to heat mode',
+    );
+    expect(nextState).toMatchObject({
+      fanLevel: 'strong',
+      mode: 'heat',
+      on: true,
+      targetTemperature: 23,
+    });
+  });
+
   it('should do nothing if the temperature is below range and the unit is heating', () => {
     const log = mockLogging();
 

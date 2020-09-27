@@ -8,7 +8,9 @@ import { SENSIBO_TEMPERATURE_RANGE, clampTemperature } from './temperature';
 const HIGH_HUMIDITY = 60;
 
 function fanLevelForTemperatureDeviation(deviation: number): FanLevel {
-  if (deviation > 4.0) {
+  if (deviation > 6.0) {
+    return 'strong';
+  } else if (deviation > 4.0) {
     return 'high';
   } else if (deviation > 1.0) {
     return 'medium';

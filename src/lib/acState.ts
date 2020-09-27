@@ -1,5 +1,12 @@
 export type AcMode = 'cool' | 'heat' | 'fan' | 'auto' | 'dry';
-export type FanLevel = 'auto' | 'low' | 'medium' | 'high';
+export type FanLevel =
+  | 'auto'
+  | 'low'
+  | 'medium_low'
+  | 'medium'
+  | 'medium_high'
+  | 'high'
+  | 'strong';
 
 export interface AcState {
   on: boolean;
