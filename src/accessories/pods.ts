@@ -153,13 +153,9 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
       );
 
     const commonTemperatureProps = {
-      format: hap.Characteristic.Formats.FLOAT,
-      unit: hap.Characteristic.Units.CELSIUS,
-      perms: [
-        hap.Characteristic.Perms.READ,
-        hap.Characteristic.Perms.WRITE,
-        hap.Characteristic.Perms.NOTIFY,
-      ],
+      format: hap.Formats.FLOAT,
+      unit: hap.Units.CELSIUS,
+      perms: [hap.Perms.PAIRED_READ, hap.Perms.PAIRED_WRITE, hap.Perms.NOTIFY],
     };
 
     // Target Temperature characteristic
