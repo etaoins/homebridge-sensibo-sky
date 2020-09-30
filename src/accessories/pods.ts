@@ -530,17 +530,21 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
 
   private logStateChange(acState: AcState): void {
     const roomTemp = this.roomMeasurement?.temperature ?? 'unknown';
+    const roomHumid = this.roomMeasurement?.humidity ?? 'unknown';
 
-    if (acState.on) {
+    const { mode, targetTemperature } = acState;
+    const fanLevel = acState.fanLevel ?? 'N/A';
+
+    if (!acState.on) {
+      this.log(`Changed AC state (roomTemp: ${roomTemp}, mode: off)`);
+    } else if (mode === 'dry') {
       this.log(
-        'Changed AC state (roomTemp: %s, mode: %s, targetTemp: %s, speed: %s)',
-        roomTemp,
-        acState.mode,
-        acState.targetTemperature,
-        acState.fanLevel,
+        `Changed AC state (roomTemp: ${roomTemp}, mode: ${mode}, roomHumid: ${roomHumid})`,
       );
     } else {
-      this.log('Changed AC state (roomTemp: %s, mode: off)', roomTemp);
+      this.log(
+        `Changed AC state (roomTemp: ${roomTemp}, mode: ${mode}, targetTemp: ${targetTemperature}, speed: ${fanLevel})`,
+      );
     }
   }
 }
