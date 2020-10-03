@@ -1,6 +1,6 @@
 import * as Homebridge from 'homebridge';
 
-import { calculateDesiredAcState } from '../lib/temperatureController';
+import { calculateDesiredAcState } from '../lib/autoController';
 import { acStatesEquivalent, AcState } from '../lib/acState';
 import { Device } from '../lib/device';
 import { Measurement, pollNextMeasurementInMs } from '../lib/measurement';
@@ -497,7 +497,7 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
 
     if (autoMode) {
       if (this.roomMeasurement) {
-        newAcState = calculateDesiredAcState(
+        const desiredAcState = calculateDesiredAcState(
           this.log,
           {
             roomMeasurement: this.roomMeasurement,
@@ -506,6 +506,13 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
           },
           newAcState,
         );
+
+        if (desiredAcState === false) {
+          // Nothing to do
+          return;
+        }
+
+        newAcState = desiredAcState;
       }
     } else {
       newAcState.fanLevel = 'auto';
