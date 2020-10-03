@@ -523,7 +523,7 @@ describe('calculateDesiredAcState', () => {
         {
           roomMeasurement: {
             temperature: 21.0,
-            humidity: 60,
+            humidity: 70,
           },
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
@@ -533,7 +533,7 @@ describe('calculateDesiredAcState', () => {
 
       expect(log).toBeCalledTimes(1);
       expect(log).toBeCalledWith(
-        'More humid (60) than drying threshold (50), starting dry mode',
+        'More humid (70) than drying threshold (60), starting dry mode',
       );
 
       expect(desiredState).toMatchObject({

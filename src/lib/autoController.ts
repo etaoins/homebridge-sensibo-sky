@@ -8,7 +8,9 @@ import {
   clampTemperature,
 } from './temperature';
 
-const DRYING_HUMIDITY_THRESHOLD = 50;
+const MIDPOINT_NORMAL_HUMIDITY = 40;
+const MAXIMUM_NORMAL_HUMIDITY = 50;
+const DRYING_HUMIDITY_THRESHOLD = 60;
 
 const fanLevelForTemperatureDeviation = (deviation: number): FanLevel => {
   if (deviation > 7.0) {
@@ -42,8 +44,6 @@ const currentModeHasReachedGoal = (
   input: AutoModeInput,
   prevState: AcState,
 ): boolean | null => {
-  const MIDPOINT_HUMIDITY = 40;
-
   const {
     roomMeasurement,
     heatingThresholdTemperature,
@@ -84,14 +84,14 @@ const currentModeHasReachedGoal = (
       return false;
 
     case 'dry':
-      if (roomMeasurement.humidity < MIDPOINT_HUMIDITY) {
+      if (roomMeasurement.humidity < MIDPOINT_NORMAL_HUMIDITY) {
         log(
-          `Dried (${roomMeasurement.humidity}) to humidity mid-point (${MIDPOINT_HUMIDITY})`,
+          `Dried (${roomMeasurement.humidity}) to humidity mid-point (${MIDPOINT_NORMAL_HUMIDITY})`,
         );
         return true;
       }
 
-      return roomMeasurement.humidity > DRYING_HUMIDITY_THRESHOLD
+      return roomMeasurement.humidity > MAXIMUM_NORMAL_HUMIDITY
         ? false
         : // Returning `null` here yields to the temperature thresholds
           null;
