@@ -117,6 +117,35 @@ export const calculateDesiredAcState = (
     coolingThresholdTemperature,
   );
 
+  // See if we need to fan boost
+  if (
+    prevState.on &&
+    prevState.mode === 'heat' &&
+    prevState.fanLevel === 'low'
+  ) {
+    const boostFanLevel = fanLevelForTemperatureDeviation(
+      heatingThresholdTemperature - roomMeasurement.temperature,
+    );
+
+    if (boostFanLevel !== 'low') {
+      return { ...prevState, fanLevel: boostFanLevel };
+    }
+  }
+
+  if (
+    prevState.on &&
+    prevState.mode === 'cool' &&
+    prevState.fanLevel === 'low'
+  ) {
+    const boostFanLevel = fanLevelForTemperatureDeviation(
+      roomMeasurement.temperature - coolingThresholdTemperature,
+    );
+
+    if (boostFanLevel !== 'low') {
+      return { ...prevState, fanLevel: boostFanLevel };
+    }
+  }
+
   const hasReachedGoal = currentModeHasReachedGoal(log, input, prevState);
   if (hasReachedGoal === false) {
     // Still trying to reach goal

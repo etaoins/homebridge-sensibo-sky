@@ -205,14 +205,14 @@ describe('calculateDesiredAcState', () => {
       });
     });
 
-    it('should do nothing if the temperature is below range and the unit is heating', () => {
+    it('should do nothing if the temperature is 1C below range and the unit is heating', () => {
       const log = mockLogging();
 
       const desiredState = calculateDesiredAcState(
         log,
         {
           roomMeasurement: {
-            temperature: 14.0,
+            temperature: 18.0,
             humidity: 40,
           },
           heatingThresholdTemperature: 19.0,
@@ -223,6 +223,30 @@ describe('calculateDesiredAcState', () => {
 
       expect(log).not.toBeCalled();
       expect(desiredState).toBe(false);
+    });
+
+    it('should increase the fan speed if the temperature is 2C below range and the unit is heating on low', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log,
+        {
+          roomMeasurement: {
+            temperature: 17.0,
+            humidity: 40,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+        },
+        { ...MOCK_AC_STATE, on: true, mode: 'heat', fanLevel: 'low' },
+      );
+
+      expect(log).not.toBeCalled();
+      expect(desiredState).toMatchObject({
+        on: true,
+        mode: 'heat',
+        fanLevel: 'medium',
+      });
     });
 
     it('should do nothing if heating while cooler than target temperature', () => {
@@ -390,14 +414,14 @@ describe('calculateDesiredAcState', () => {
       });
     });
 
-    it('should do nothing if the temperature is above range and the unit is cooling', () => {
+    it('should do nothing if the temperature is 1C above range and the unit is cooling', () => {
       const log = mockLogging();
 
       const desiredState = calculateDesiredAcState(
         log,
         {
           roomMeasurement: {
-            temperature: 26.0,
+            temperature: 24.0,
             humidity: 40,
           },
           heatingThresholdTemperature: 19.0,
@@ -408,6 +432,30 @@ describe('calculateDesiredAcState', () => {
 
       expect(log).not.toBeCalled();
       expect(desiredState).toBe(false);
+    });
+
+    it('should boost the fan spped if the temperature is 2C above range and the unit is cooling on low', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log,
+        {
+          roomMeasurement: {
+            temperature: 25.0,
+            humidity: 40,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+        },
+        { ...MOCK_AC_STATE, on: true, mode: 'cool' },
+      );
+
+      expect(log).not.toBeCalled();
+      expect(desiredState).toMatchObject({
+        on: true,
+        mode: 'cool',
+        fanLevel: 'medium',
+      });
     });
 
     it('should do nothing if cooling while hotter than target temperature', () => {
