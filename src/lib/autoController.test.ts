@@ -241,7 +241,11 @@ describe('calculateDesiredAcState', () => {
         { ...MOCK_AC_STATE, on: true, mode: 'heat', fanLevel: 'low' },
       );
 
-      expect(log).not.toBeCalled();
+      expect(log).toBeCalledTimes(1);
+      expect(log).toBeCalledWith(
+        'Heating on low is ineffective; boosting to medium',
+      );
+
       expect(desiredState).toMatchObject({
         on: true,
         mode: 'heat',
@@ -434,7 +438,7 @@ describe('calculateDesiredAcState', () => {
       expect(desiredState).toBe(false);
     });
 
-    it('should boost the fan spped if the temperature is 2C above range and the unit is cooling on low', () => {
+    it('should increase the fan speed if the temperature is 2C above range and the unit is cooling on low', () => {
       const log = mockLogging();
 
       const desiredState = calculateDesiredAcState(
@@ -450,7 +454,11 @@ describe('calculateDesiredAcState', () => {
         { ...MOCK_AC_STATE, on: true, mode: 'cool' },
       );
 
-      expect(log).not.toBeCalled();
+      expect(log).toBeCalledTimes(1);
+      expect(log).toBeCalledWith(
+        'Cooling on low is ineffective; boosting to medium',
+      );
+
       expect(desiredState).toMatchObject({
         on: true,
         mode: 'cool',

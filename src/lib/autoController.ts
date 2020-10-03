@@ -128,6 +128,7 @@ export const calculateDesiredAcState = (
     );
 
     if (boostFanLevel !== 'low') {
+      log(`Heating on low is ineffective; boosting to ${boostFanLevel}`);
       return { ...prevState, fanLevel: boostFanLevel };
     }
   }
@@ -142,6 +143,7 @@ export const calculateDesiredAcState = (
     );
 
     if (boostFanLevel !== 'low') {
+      log(`Cooling on low is ineffective; boosting to ${boostFanLevel}`);
       return { ...prevState, fanLevel: boostFanLevel };
     }
   }
