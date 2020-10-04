@@ -30,7 +30,6 @@ const heatingCoolingStateForAcState = (
 
   switch (acState.mode) {
     case 'cool':
-    case 'dry':
       return characteristic.COOL;
     case 'heat':
       return characteristic.HEAT;
