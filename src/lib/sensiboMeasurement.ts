@@ -10,7 +10,7 @@ const MINIMUM_POLL_INTERVAL_SECS = 30;
  */
 const MEASUREMENT_INTERVAL_SECS = 90;
 
-export interface Measurement {
+export interface SensiboMeasurement {
   temperature: number;
   humidity: number;
   time: { secondsAgo: number; time: string };
@@ -21,7 +21,7 @@ export interface Measurement {
  */
 export const pollNextMeasurementInMs = (
   log: Homebridge.Logging,
-  prevMeasurement?: Pick<Measurement, 'time'>,
+  prevMeasurement?: Pick<SensiboMeasurement, 'time'>,
 ): number => {
   if (!prevMeasurement) {
     return MINIMUM_POLL_INTERVAL_SECS * 1000;

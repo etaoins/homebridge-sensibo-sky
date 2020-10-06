@@ -3,7 +3,12 @@ import * as Homebridge from 'homebridge';
 import { calculateDesiredAcState } from '../lib/autoController';
 import { acStatesEquivalent, AcState } from '../lib/acState';
 import { Device } from '../lib/device';
-import { Measurement, pollNextMeasurementInMs } from '../lib/measurement';
+import { BomObservation, pollNextObservationInMs } from '../lib/bomObservation';
+import {
+  SensiboMeasurement,
+  pollNextMeasurementInMs,
+} from '../lib/sensiboMeasurement';
+import { getBomObservation } from '../lib/bomClient';
 import {
   saveUserState,
   restoreUserState,
@@ -47,7 +52,8 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
   private log: Homebridge.Logging;
 
   private acState: AcState;
-  private roomMeasurement?: Measurement;
+  private roomMeasurement?: SensiboMeasurement;
+  private bomObservation?: BomObservation;
   private userState: UserState;
 
   private readonly informationService: Homebridge.Service;
@@ -255,6 +261,11 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
     }
 
     this.pollSensibo().catch((err) => this.log.warn(err));
+
+    const { bomObservationsUrl } = this.platform.config;
+    if (bomObservationsUrl) {
+      this.pollBom(bomObservationsUrl).catch((err) => this.log.warn(err));
+    }
   }
 
   getServices(): Homebridge.Service[] {
@@ -266,7 +277,7 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
   }
 
   private async pollSensibo(): Promise<void> {
-    let newMeasurement: Measurement | undefined;
+    let newMeasurement: SensiboMeasurement | undefined;
 
     try {
       newMeasurement = await this.refreshRoomMeasurement();
@@ -292,6 +303,27 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
     }
   }
 
+  private async pollBom(bomObservationsUrl: string): Promise<void> {
+    try {
+      this.bomObservation = await getBomObservation(bomObservationsUrl);
+    } catch (err) {
+      // If the BOM goes down then clear the stale observation
+      delete this.bomObservation;
+
+      this.log.warn(err);
+    }
+
+    global.setTimeout(() => {
+      this.pollBom(bomObservationsUrl).catch((err) => {
+        if (err instanceof Error) {
+          this.log.warn(err.message);
+        } else {
+          this.log.warn('Caught non-error', err);
+        }
+      });
+    }, pollNextObservationInMs());
+  }
+
   private async refreshAcState(): Promise<AcState | undefined> {
     // Fetch the server state
     const serverAcState = await this.platform.sensiboClient.getAcState(
@@ -305,7 +337,9 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
     return serverAcState;
   }
 
-  private async refreshRoomMeasurement(): Promise<Measurement | undefined> {
+  private async refreshRoomMeasurement(): Promise<
+    SensiboMeasurement | undefined
+  > {
     // Update the temperature
     const measurements = await this.platform.sensiboClient.getMeasurements(
       this.deviceId,
@@ -502,6 +536,7 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
             roomMeasurement: this.roomMeasurement,
             heatingThresholdTemperature,
             coolingThresholdTemperature,
+            bomObservation: this.bomObservation,
           },
           newAcState,
         );

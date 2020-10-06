@@ -4,7 +4,7 @@ import https from 'https';
 import { celciusToFahrenheit } from './temperature';
 import { AcState } from './acState';
 import { Device } from './device';
-import { Measurement } from './measurement';
+import { SensiboMeasurement } from './sensiboMeasurement';
 
 /**
  * Interval that Sensibo collects measurements on
@@ -126,7 +126,7 @@ export class SensiboClient {
     );
   }
 
-  async getMeasurements(deviceId: string): Promise<Measurement[]> {
+  async getMeasurements(deviceId: string): Promise<SensiboMeasurement[]> {
     const data = await get(
       `pods/${deviceId}/measurements?fields=temperature,humidity,time&apiKey=${this.apiKey}`,
     );
@@ -137,7 +137,7 @@ export class SensiboClient {
 
     const { status, result } = data as Record<string, unknown>;
     if (status === 'success' && Array.isArray(result)) {
-      return result as Measurement[];
+      return result as SensiboMeasurement[];
     }
 
     throw new Error(

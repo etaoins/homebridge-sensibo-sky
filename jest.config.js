@@ -3,9 +3,10 @@ module.exports = {
   roots: ['<rootDir>/src'],
   collectCoverageFrom: [
     'src/lib/acState.ts',
-    'src/lib/measurement.ts',
-    'src/lib/temperature.ts',
     'src/lib/autoController.ts',
+    'src/lib/measurement.ts',
+    'src/lib/outdoorAirBenefit.ts',
+    'src/lib/temperature.ts',
     'src/lib/userState.ts',
   ],
   coverageThreshold: {

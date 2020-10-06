@@ -1,4 +1,4 @@
-import { pollNextMeasurementInMs } from './measurement';
+import { pollNextMeasurementInMs } from './sensiboMeasurement';
 
 describe('pollNextMeasurementInMs', () => {
   it('should return the minimum interval when there is no previous measurement', () => {

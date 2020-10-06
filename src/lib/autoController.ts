@@ -1,7 +1,9 @@
 import * as Homebridge from 'homebridge';
 
 import { AcState, FanLevel } from './acState';
-import { Measurement } from './measurement';
+import { BomObservation } from './bomObservation';
+import { shouldStartFanMode, shouldStopFanMode } from './outdoorAirBenefit';
+import { SensiboMeasurement } from './sensiboMeasurement';
 import {
   SENSIBO_HEATING_TEMPERATURE_RANGE,
   SENSIBO_COOLING_TEMPERATURE_RANGE,
@@ -24,10 +26,24 @@ const fanLevelForTemperatureDeviation = (deviation: number): FanLevel => {
   return 'low';
 };
 
+const airMetricsString = ({
+  temperature,
+  humidity,
+}: {
+  temperature: number;
+  humidity: number;
+}): string => `${temperature}C, ${humidity}%`;
+
 interface AutoModeInput {
-  roomMeasurement: Pick<Measurement, 'temperature' | 'humidity'>;
+  roomMeasurement: Pick<SensiboMeasurement, 'temperature' | 'humidity'>;
   heatingThresholdTemperature: number;
   coolingThresholdTemperature: number;
+  bomObservation?: BomObservation;
+}
+
+interface TargetState {
+  humidity: number;
+  temperature: number;
 }
 
 /**
@@ -43,11 +59,13 @@ const currentModeHasReachedGoal = (
   log: Homebridge.Logging,
   input: AutoModeInput,
   prevState: AcState,
+  target: TargetState,
 ): boolean | null => {
   const {
     roomMeasurement,
     heatingThresholdTemperature,
     coolingThresholdTemperature,
+    bomObservation,
   } = input;
 
   const midPointTemperature =
@@ -58,9 +76,25 @@ const currentModeHasReachedGoal = (
   }
 
   switch (prevState.mode) {
-    case 'fan':
     case 'auto':
-      // Only the user can request these; they have no stopping condition
+      // Only the user can request auto; it has no stopping condition
+      return null;
+
+    case 'fan':
+      if (
+        bomObservation &&
+        shouldStopFanMode({ roomMeasurement, target, bomObservation })
+      ) {
+        log(
+          `Outdoor air (${airMetricsString(
+            bomObservation,
+          )}) is worse than indoor (${airMetricsString(roomMeasurement)})`,
+        );
+
+        return true;
+      }
+
+      // Fan is more of an idle state that goal seeking
       return null;
 
     case 'heat':
@@ -107,14 +141,28 @@ export const calculateDesiredAcState = (
     roomMeasurement,
     heatingThresholdTemperature,
     coolingThresholdTemperature,
+    bomObservation,
   } = input;
 
+  const target = {
+    temperature:
+      (heatingThresholdTemperature + coolingThresholdTemperature) / 2,
+    humidity: MIDPOINT_NORMAL_HUMIDITY,
+  };
+
   log.debug(
-    'Calculating desired state (roomTemp: %s, mode: %s, heatingThresh %s, coolingThresh: %s)',
-    roomMeasurement.temperature,
-    prevState.on ? prevState.mode : 'off',
-    heatingThresholdTemperature,
-    coolingThresholdTemperature,
+    // eslint-disable-next-line prefer-template
+    'Calculating desired state (' +
+      [
+        `roomTemp: ${roomMeasurement.temperature}`,
+        `roomHumid: ${roomMeasurement.humidity}`,
+        `outdoorTemp: ${bomObservation?.temperature ?? 'unknown'}`,
+        `outdoorHumid: ${bomObservation?.humidity ?? 'unknown'}`,
+        `mode: ${prevState.on ? prevState.mode : 'off'}`,
+        `heatingThresh: ${heatingThresholdTemperature}`,
+        `coolingThresh: ${coolingThresholdTemperature}`,
+      ].join(', ') +
+      ')',
   );
 
   // See if we need to fan boost
@@ -148,7 +196,13 @@ export const calculateDesiredAcState = (
     }
   }
 
-  const hasReachedGoal = currentModeHasReachedGoal(log, input, prevState);
+  const hasReachedGoal = currentModeHasReachedGoal(
+    log,
+    input,
+    prevState,
+    target,
+  );
+
   if (hasReachedGoal === false) {
     // Still trying to reach goal
     return false;
@@ -205,6 +259,28 @@ export const calculateDesiredAcState = (
       on: true,
       mode: 'dry',
       fanLevel: undefined,
+    };
+  }
+
+  if (
+    bomObservation &&
+    shouldStartFanMode({ roomMeasurement, target, bomObservation }) &&
+    prevState.mode !== 'fan'
+  ) {
+    log(
+      `Outdoor air (${airMetricsString(
+        bomObservation,
+      )}) better than indoor (${airMetricsString(
+        roomMeasurement,
+      )}), starting fan mode`,
+    );
+
+    return {
+      ...prevState,
+
+      on: true,
+      mode: 'fan',
+      fanLevel: 'low',
     };
   }
 

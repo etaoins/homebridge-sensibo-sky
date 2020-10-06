@@ -631,9 +631,9 @@ describe('calculateDesiredAcState', () => {
       );
 
       expect(desiredState).toMatchObject({
-        fanLevel: 'low',
-        mode: 'heat',
         on: true,
+        mode: 'heat',
+        fanLevel: 'low',
         targetTemperature: 23,
       });
     });
@@ -660,11 +660,94 @@ describe('calculateDesiredAcState', () => {
       );
 
       expect(desiredState).toMatchObject({
-        fanLevel: 'low',
-        mode: 'cool',
         on: true,
+        mode: 'cool',
+        fanLevel: 'low',
         targetTemperature: 19,
       });
+    });
+  });
+
+  describe('fan', () => {
+    it('should turn the fan on if the outdoor air is significantly better', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log,
+        {
+          roomMeasurement: {
+            temperature: 23.0,
+            humidity: 60,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+          bomObservation: { temperature: 15.0, humidity: 30 },
+        },
+        { ...MOCK_AC_STATE, on: false },
+      );
+
+      expect(log).toBeCalledTimes(1);
+      expect(log).toBeCalledWith(
+        'Outdoor air (15C, 30%) better than indoor (23C, 60%), starting fan mode',
+      );
+
+      expect(desiredState).toMatchObject({
+        on: true,
+        mode: 'fan',
+        fanLevel: 'low',
+      });
+    });
+
+    it('should keep the fan on if the outdoor air is still providing benefit', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log,
+        {
+          roomMeasurement: {
+            temperature: 22.1,
+            humidity: 40.1,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+          bomObservation: { temperature: 15.0, humidity: 30 },
+        },
+        { ...MOCK_AC_STATE, on: true, mode: 'fan' },
+      );
+
+      expect(log).not.toBeCalled();
+      expect(desiredState).toBe(false);
+    });
+  });
+
+  it('should turn the fan off if the outdoor air is no longer providing benefit', () => {
+    const log = mockLogging();
+
+    const desiredState = calculateDesiredAcState(
+      log,
+      {
+        roomMeasurement: {
+          // This is too cold
+          temperature: 19.0,
+          humidity: 60,
+        },
+        heatingThresholdTemperature: 19.0,
+        coolingThresholdTemperature: 23.0,
+        bomObservation: { temperature: 15.0, humidity: 30 },
+      },
+      { ...MOCK_AC_STATE, on: true, mode: 'fan' },
+    );
+
+    expect(log).toBeCalledTimes(2);
+    expect(log).toBeCalledWith(
+      'Outdoor air (15C, 30%) is worse than indoor (19C, 60%)',
+    );
+    expect(log).toBeCalledWith(
+      'Reached goal with nothing else to do; switching off',
+    );
+
+    expect(desiredState).toMatchObject({
+      on: false,
     });
   });
 });
