@@ -2,7 +2,12 @@ import * as Homebridge from 'homebridge';
 
 import { AcState, FanLevel } from './acState';
 import { BomObservation } from './bomObservation';
-import { shouldStartFanMode, shouldStopFanMode } from './outdoorAirBenefit';
+import {
+  shouldStopDryMode,
+  canStartDryMode,
+  shouldStartFanMode,
+  shouldStopFanMode,
+} from './outdoorAirBenefit';
 import { SensiboMeasurement } from './sensiboMeasurement';
 import {
   SENSIBO_HEATING_TEMPERATURE_RANGE,
@@ -122,6 +127,16 @@ const currentModeHasReachedGoal = (
         log(
           `Dried (${roomMeasurement.humidity}) to humidity mid-point (${MIDPOINT_NORMAL_HUMIDITY})`,
         );
+        return true;
+      }
+
+      if (bomObservation && shouldStopDryMode(bomObservation)) {
+        log(
+          `Outdoor air (${airMetricsString(
+            bomObservation,
+          )}) is no longer suitable for dehumidifying`,
+        );
+
         return true;
       }
 
@@ -248,7 +263,10 @@ export const calculateDesiredAcState = (
     };
   }
 
-  if (roomMeasurement.humidity > DRYING_HUMIDITY_THRESHOLD) {
+  if (
+    roomMeasurement.humidity > DRYING_HUMIDITY_THRESHOLD &&
+    (!bomObservation || canStartDryMode(bomObservation))
+  ) {
     log(
       `More humid (${roomMeasurement.humidity}) than drying threshold (${DRYING_HUMIDITY_THRESHOLD}), starting dry mode`,
     );

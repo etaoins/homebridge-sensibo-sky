@@ -542,6 +542,30 @@ describe('calculateDesiredAcState', () => {
       });
     });
 
+    it('should not dry if more humid than drying threshold and outdoor air is unsuitable', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log,
+        {
+          roomMeasurement: {
+            temperature: 21.0,
+            humidity: 70,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+          bomObservation: {
+            humidity: 95,
+            temperature: 5,
+          },
+        },
+        { ...MOCK_AC_STATE, on: false },
+      );
+
+      expect(log).not.toBeCalled();
+      expect(desiredState).toBe(false);
+    });
+
     it('should do nothing if the humidity is above range and the unit is drying', () => {
       const log = mockLogging();
 
@@ -600,6 +624,39 @@ describe('calculateDesiredAcState', () => {
 
       expect(log).toBeCalledTimes(2);
       expect(log).toBeCalledWith('Dried (20) to humidity mid-point (40)');
+      expect(log).toBeCalledWith(
+        'Reached goal with nothing else to do; switching off',
+      );
+
+      expect(desiredState).toMatchObject({
+        on: false,
+      });
+    });
+
+    it('should turn off if outdoor air become unsuitable for dehumidifying', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log as any,
+        {
+          roomMeasurement: {
+            temperature: 21.0,
+            humidity: 60,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+          bomObservation: {
+            humidity: 100,
+            temperature: 5,
+          },
+        },
+        { ...MOCK_AC_STATE, on: true, mode: 'dry' },
+      );
+
+      expect(log).toBeCalledTimes(2);
+      expect(log).toBeCalledWith(
+        'Outdoor air (5C, 100%) is no longer suitable for dehumidifying',
+      );
       expect(log).toBeCalledWith(
         'Reached goal with nothing else to do; switching off',
       );

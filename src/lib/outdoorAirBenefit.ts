@@ -70,3 +70,13 @@ export const shouldStartFanMode = ({
     },
     5.0,
   );
+
+export const canStartDryMode = ({
+  temperature,
+  humidity,
+}: BomObservation): boolean => temperature > 15 && humidity < 85;
+
+export const shouldStopDryMode = ({
+  temperature,
+  humidity,
+}: BomObservation): boolean => temperature < 10 || humidity > 95;

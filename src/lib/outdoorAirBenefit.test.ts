@@ -1,4 +1,9 @@
-import { shouldStartFanMode, shouldStopFanMode } from './outdoorAirBenefit';
+import {
+  canStartDryMode,
+  shouldStopDryMode,
+  shouldStartFanMode,
+  shouldStopFanMode,
+} from './outdoorAirBenefit';
 
 describe('outdoorAirBenefit', () => {
   it('should stop fan when room, BOM & target match', () => {
@@ -179,5 +184,57 @@ describe('outdoorAirBenefit', () => {
 
     expect(shouldStartFanMode(input)).toBe(true);
     expect(shouldStopFanMode(input)).toBe(false);
+  });
+});
+
+describe('dry mode', () => {
+  it('should start if the outdoor humidity & temperature is normal', () => {
+    const bomObservation = {
+      temperature: 25,
+      humidity: 50,
+    };
+
+    expect(canStartDryMode(bomObservation)).toBe(true);
+    expect(shouldStopDryMode(bomObservation)).toBe(false);
+  });
+
+  it('should keep dry mode if the outdoor humidity is above 85%', () => {
+    const bomObservation = {
+      temperature: 25,
+      humidity: 90,
+    };
+
+    expect(canStartDryMode(bomObservation)).toBe(false);
+    expect(shouldStopDryMode(bomObservation)).toBe(false);
+  });
+
+  it('should stop dry mode if the outdoor humidity is above 95%', () => {
+    const bomObservation = {
+      temperature: 25,
+      humidity: 100,
+    };
+
+    expect(canStartDryMode(bomObservation)).toBe(false);
+    expect(shouldStopDryMode(bomObservation)).toBe(true);
+  });
+
+  it('should keep dry mode if the outdoor temperature is chilly', () => {
+    const bomObservation = {
+      temperature: 12.5,
+      humidity: 50,
+    };
+
+    expect(canStartDryMode(bomObservation)).toBe(false);
+    expect(shouldStopDryMode(bomObservation)).toBe(false);
+  });
+
+  it('should stop dry mode if the outdoor temperature is cold', () => {
+    const bomObservation = {
+      temperature: 5,
+      humidity: 50,
+    };
+
+    expect(canStartDryMode(bomObservation)).toBe(false);
+    expect(shouldStopDryMode(bomObservation)).toBe(true);
   });
 });
