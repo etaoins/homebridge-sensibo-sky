@@ -514,217 +514,6 @@ describe('calculateDesiredAcState', () => {
     });
   });
 
-  describe('drying', () => {
-    it('should dry if more humid than drying threshold', () => {
-      const log = mockLogging();
-
-      const desiredState = calculateDesiredAcState(
-        log,
-        {
-          roomMeasurement: {
-            temperature: 21.0,
-            humidity: 70,
-          },
-          heatingThresholdTemperature: 19.0,
-          coolingThresholdTemperature: 23.0,
-        },
-        { ...MOCK_AC_STATE, on: false },
-      );
-
-      expect(log).toBeCalledTimes(1);
-      expect(log).toBeCalledWith(
-        'More humid (70) than drying threshold (60), starting dry mode',
-      );
-
-      expect(desiredState).toMatchObject({
-        mode: 'dry',
-        on: true,
-      });
-    });
-
-    it('should not dry if more humid than drying threshold and outdoor air is unsuitable', () => {
-      const log = mockLogging();
-
-      const desiredState = calculateDesiredAcState(
-        log,
-        {
-          roomMeasurement: {
-            temperature: 21.0,
-            humidity: 70,
-          },
-          heatingThresholdTemperature: 19.0,
-          coolingThresholdTemperature: 23.0,
-          bomObservation: {
-            humidity: 95,
-            temperature: 5,
-          },
-        },
-        { ...MOCK_AC_STATE, on: false },
-      );
-
-      expect(log).not.toBeCalled();
-      expect(desiredState).toBe(false);
-    });
-
-    it('should do nothing if the humidity is above range and the unit is drying', () => {
-      const log = mockLogging();
-
-      const desiredState = calculateDesiredAcState(
-        log,
-        {
-          roomMeasurement: {
-            temperature: 21.0,
-            humidity: 60,
-          },
-          heatingThresholdTemperature: 19.0,
-          coolingThresholdTemperature: 23.0,
-        },
-        { ...MOCK_AC_STATE, on: true, mode: 'dry' },
-      );
-
-      expect(log).not.toBeCalled();
-      expect(desiredState).toBe(false);
-    });
-
-    it('should do nothing if drying while more humid than humidity mid-point', () => {
-      const log = mockLogging();
-
-      const desiredState = calculateDesiredAcState(
-        log,
-        {
-          roomMeasurement: {
-            temperature: 22.0,
-            humidity: 40,
-          },
-          heatingThresholdTemperature: 19.0,
-          coolingThresholdTemperature: 23.0,
-        },
-        { ...MOCK_AC_STATE, on: true, mode: 'dry' },
-      );
-
-      expect(log).not.toBeCalled();
-      expect(desiredState).toBe(false);
-    });
-
-    it('should turn off if drying while drier than target humidity', () => {
-      const log = mockLogging();
-
-      const desiredState = calculateDesiredAcState(
-        log as any,
-        {
-          roomMeasurement: {
-            temperature: 21.0,
-            humidity: 20,
-          },
-          heatingThresholdTemperature: 19.0,
-          coolingThresholdTemperature: 23.0,
-        },
-        { ...MOCK_AC_STATE, on: true, mode: 'dry' },
-      );
-
-      expect(log).toBeCalledTimes(2);
-      expect(log).toBeCalledWith('Dried (20) to humidity mid-point (40)');
-      expect(log).toBeCalledWith(
-        'Reached goal with nothing else to do; switching off',
-      );
-
-      expect(desiredState).toMatchObject({
-        on: false,
-      });
-    });
-
-    it('should turn off if outdoor air become unsuitable for dehumidifying', () => {
-      const log = mockLogging();
-
-      const desiredState = calculateDesiredAcState(
-        log as any,
-        {
-          roomMeasurement: {
-            temperature: 21.0,
-            humidity: 60,
-          },
-          heatingThresholdTemperature: 19.0,
-          coolingThresholdTemperature: 23.0,
-          bomObservation: {
-            humidity: 100,
-            temperature: 5,
-          },
-        },
-        { ...MOCK_AC_STATE, on: true, mode: 'dry' },
-      );
-
-      expect(log).toBeCalledTimes(2);
-      expect(log).toBeCalledWith(
-        'Outdoor air (5C, 100%) is no longer suitable for dehumidifying',
-      );
-      expect(log).toBeCalledWith(
-        'Reached goal with nothing else to do; switching off',
-      );
-
-      expect(desiredState).toMatchObject({
-        on: false,
-      });
-    });
-
-    it('should do switch to heat mode if drying while humidity is in range and temperature is below range', () => {
-      const log = mockLogging();
-
-      const desiredState = calculateDesiredAcState(
-        log,
-        {
-          roomMeasurement: {
-            temperature: 18.0,
-            humidity: 50,
-          },
-          heatingThresholdTemperature: 19.0,
-          coolingThresholdTemperature: 23.0,
-        },
-        { ...MOCK_AC_STATE, on: true, mode: 'dry' },
-      );
-
-      expect(log).toBeCalledTimes(1);
-      expect(log).toBeCalledWith(
-        'Colder (18) than heating threshold (19), starting heat mode',
-      );
-
-      expect(desiredState).toMatchObject({
-        on: true,
-        mode: 'heat',
-        fanLevel: 'low',
-        targetTemperature: 23,
-      });
-    });
-
-    it('should do switch to cool mode if drying while humidity is in range and temperature is above range', () => {
-      const log = mockLogging();
-
-      const desiredState = calculateDesiredAcState(
-        log,
-        {
-          roomMeasurement: {
-            temperature: 24.0,
-            humidity: 50,
-          },
-          heatingThresholdTemperature: 19.0,
-          coolingThresholdTemperature: 23.0,
-        },
-        { ...MOCK_AC_STATE, on: true, mode: 'dry' },
-      );
-
-      expect(log).toBeCalledTimes(1);
-      expect(log).toBeCalledWith(
-        'Hotter (24) than cooling threshold (23), starting cool mode',
-      );
-
-      expect(desiredState).toMatchObject({
-        on: true,
-        mode: 'cool',
-        fanLevel: 'low',
-        targetTemperature: 19,
-      });
-    });
-  });
-
   describe('fan', () => {
     it('should turn the fan on if the outdoor air is significantly better', () => {
       const log = mockLogging();
@@ -805,6 +594,57 @@ describe('calculateDesiredAcState', () => {
 
     expect(desiredState).toMatchObject({
       on: false,
+    });
+  });
+
+  describe('dry', () => {
+    it('should start drying if the outdoor air is significantly better except for humidity', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log,
+        {
+          roomMeasurement: {
+            temperature: 23.0,
+            humidity: 60,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+          bomObservation: { temperature: 15.0, humidity: 60 },
+        },
+        { ...MOCK_AC_STATE, on: false },
+      );
+
+      expect(log).toBeCalledTimes(1);
+      expect(log).toBeCalledWith(
+        'Outdoor air (15C, 60%) better than indoor (23C, 60%), starting dry mode',
+      );
+
+      expect(desiredState).toMatchObject({
+        on: true,
+        mode: 'dry',
+      });
+    });
+
+    it('should keep drying on if the outdoor air is still providing benefit', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log,
+        {
+          roomMeasurement: {
+            temperature: 22.1,
+            humidity: 40.1,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+          bomObservation: { temperature: 15.0, humidity: 60 },
+        },
+        { ...MOCK_AC_STATE, on: true, mode: 'dry' },
+      );
+
+      expect(log).not.toBeCalled();
+      expect(desiredState).toBe(false);
     });
   });
 });

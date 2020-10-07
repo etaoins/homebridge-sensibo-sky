@@ -18,6 +18,9 @@ interface Metric {
   bomObservation: number;
 }
 
+// Assume we can halve the outdoor humidity in dry mode
+const effectiveOutdoorAirInDryMode = (humidity: number) => humidity / 2;
+
 const metricIsBeneficial = (
   { roomMeasurement, target, bomObservation }: Metric,
   threshold: number,
@@ -27,11 +30,10 @@ const metricIsBeneficial = (
   (target - roomMeasurement > threshold &&
     bomObservation - roomMeasurement > threshold);
 
-export const shouldStopFanMode = ({
-  roomMeasurement,
-  target,
-  bomObservation,
-}: OutdoorAirBenefitInput): boolean =>
+export const shouldStopIngesting = (
+  { roomMeasurement, target, bomObservation }: OutdoorAirBenefitInput,
+  mode: 'fan' | 'dry',
+): boolean =>
   !metricIsBeneficial(
     {
       roomMeasurement: roomMeasurement.temperature,
@@ -44,39 +46,61 @@ export const shouldStopFanMode = ({
     {
       roomMeasurement: roomMeasurement.humidity,
       target: target.humidity,
-      bomObservation: bomObservation.humidity,
+      bomObservation:
+        mode === 'dry'
+          ? effectiveOutdoorAirInDryMode(bomObservation.humidity)
+          : bomObservation.humidity,
     },
     0.0,
   );
 
-export const shouldStartFanMode = ({
+export const shouldStartIngesting = ({
   roomMeasurement,
   target,
   bomObservation,
-}: OutdoorAirBenefitInput): boolean =>
-  metricIsBeneficial(
-    {
-      roomMeasurement: roomMeasurement.temperature,
-      target: target.temperature,
-      bomObservation: bomObservation.temperature,
-    },
-    1.0,
-  ) &&
-  metricIsBeneficial(
-    {
-      roomMeasurement: roomMeasurement.humidity,
-      target: target.humidity,
-      bomObservation: bomObservation.humidity,
-    },
-    5.0,
-  );
+}: OutdoorAirBenefitInput): 'fan' | 'dry' | false => {
+  if (
+    !metricIsBeneficial(
+      {
+        roomMeasurement: roomMeasurement.temperature,
+        target: target.temperature,
+        bomObservation: bomObservation.temperature,
+      },
+      1.0,
+    )
+  ) {
+    // Temperature out-of-range; nothing we can do about this
+    return false;
+  }
 
-export const canStartDryMode = ({
-  temperature,
-  humidity,
-}: BomObservation): boolean => temperature > 15 && humidity < 85;
+  if (
+    metricIsBeneficial(
+      {
+        roomMeasurement: roomMeasurement.humidity,
+        target: target.humidity,
+        bomObservation: bomObservation.humidity,
+      },
+      5.0,
+    )
+  ) {
+    // We can just use the fan normally
+    return 'fan';
+  }
 
-export const shouldStopDryMode = ({
-  temperature,
-  humidity,
-}: BomObservation): boolean => temperature < 10 || humidity > 95;
+  if (
+    roomMeasurement.temperature > target.temperature &&
+    metricIsBeneficial(
+      {
+        roomMeasurement: roomMeasurement.humidity,
+        target: target.humidity,
+        bomObservation: effectiveOutdoorAirInDryMode(bomObservation.humidity),
+      },
+      5.0,
+    )
+  ) {
+    // We can use dry mode to compensate for the outdoor humidity
+    return 'dry';
+  }
+
+  return false;
+};

@@ -2,12 +2,7 @@ import * as Homebridge from 'homebridge';
 
 import { AcState, FanLevel } from './acState';
 import { BomObservation } from './bomObservation';
-import {
-  shouldStopDryMode,
-  canStartDryMode,
-  shouldStartFanMode,
-  shouldStopFanMode,
-} from './outdoorAirBenefit';
+import { shouldStartIngesting, shouldStopIngesting } from './outdoorAirBenefit';
 import { SensiboMeasurement } from './sensiboMeasurement';
 import {
   SENSIBO_HEATING_TEMPERATURE_RANGE,
@@ -16,8 +11,6 @@ import {
 } from './temperature';
 
 const MIDPOINT_NORMAL_HUMIDITY = 40;
-const MAXIMUM_NORMAL_HUMIDITY = 50;
-const DRYING_HUMIDITY_THRESHOLD = 60;
 
 const fanLevelForTemperatureDeviation = (deviation: number): FanLevel => {
   if (deviation > 7.0) {
@@ -86,9 +79,13 @@ const currentModeHasReachedGoal = (
       return null;
 
     case 'fan':
+    case 'dry':
       if (
         bomObservation &&
-        shouldStopFanMode({ roomMeasurement, target, bomObservation })
+        shouldStopIngesting(
+          { roomMeasurement, target, bomObservation },
+          prevState.mode,
+        )
       ) {
         log(
           `Outdoor air (${airMetricsString(
@@ -121,29 +118,6 @@ const currentModeHasReachedGoal = (
       }
 
       return false;
-
-    case 'dry':
-      if (roomMeasurement.humidity < MIDPOINT_NORMAL_HUMIDITY) {
-        log(
-          `Dried (${roomMeasurement.humidity}) to humidity mid-point (${MIDPOINT_NORMAL_HUMIDITY})`,
-        );
-        return true;
-      }
-
-      if (bomObservation && shouldStopDryMode(bomObservation)) {
-        log(
-          `Outdoor air (${airMetricsString(
-            bomObservation,
-          )}) is no longer suitable for dehumidifying`,
-        );
-
-        return true;
-      }
-
-      return roomMeasurement.humidity > MAXIMUM_NORMAL_HUMIDITY
-        ? false
-        : // Returning `null` here yields to the temperature thresholds
-          null;
   }
 };
 
@@ -263,43 +237,30 @@ export const calculateDesiredAcState = (
     };
   }
 
-  if (
-    roomMeasurement.humidity > DRYING_HUMIDITY_THRESHOLD &&
-    (!bomObservation || canStartDryMode(bomObservation))
-  ) {
-    log(
-      `More humid (${roomMeasurement.humidity}) than drying threshold (${DRYING_HUMIDITY_THRESHOLD}), starting dry mode`,
-    );
+  if (bomObservation) {
+    const ingestMode = shouldStartIngesting({
+      roomMeasurement,
+      target,
+      bomObservation,
+    });
 
-    return {
-      ...prevState,
+    if (ingestMode !== false && prevState.mode !== ingestMode) {
+      log(
+        `Outdoor air (${airMetricsString(
+          bomObservation,
+        )}) better than indoor (${airMetricsString(
+          roomMeasurement,
+        )}), starting ${ingestMode} mode`,
+      );
 
-      on: true,
-      mode: 'dry',
-      fanLevel: undefined,
-    };
-  }
+      return {
+        ...prevState,
 
-  if (
-    bomObservation &&
-    shouldStartFanMode({ roomMeasurement, target, bomObservation }) &&
-    prevState.mode !== 'fan'
-  ) {
-    log(
-      `Outdoor air (${airMetricsString(
-        bomObservation,
-      )}) better than indoor (${airMetricsString(
-        roomMeasurement,
-      )}), starting fan mode`,
-    );
-
-    return {
-      ...prevState,
-
-      on: true,
-      mode: 'fan',
-      fanLevel: 'low',
-    };
+        on: true,
+        mode: ingestMode,
+        fanLevel: ingestMode === 'fan' ? 'low' : undefined,
+      };
+    }
   }
 
   if (hasReachedGoal === true) {
