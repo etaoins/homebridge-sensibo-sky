@@ -515,6 +515,28 @@ describe('calculateDesiredAcState', () => {
   });
 
   describe('fan', () => {
+    it('should not start the fan if the outdoor air is not beneficial', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log,
+        {
+          roomMeasurement: {
+            // This is too cold
+            temperature: 19.0,
+            humidity: 60,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+          bomObservation: { temperature: 15.0, humidity: 30 },
+        },
+        { ...MOCK_AC_STATE, on: false, mode: 'heat' },
+      );
+
+      expect(log).toBeCalledTimes(0);
+      expect(desiredState).toBe(false);
+    });
+
     it('should turn the fan on if the outdoor air is significantly better', () => {
       const log = mockLogging();
 
@@ -529,7 +551,7 @@ describe('calculateDesiredAcState', () => {
           coolingThresholdTemperature: 23.0,
           bomObservation: { temperature: 15.0, humidity: 30 },
         },
-        { ...MOCK_AC_STATE, on: false },
+        { ...MOCK_AC_STATE, mode: 'dry', on: false },
       );
 
       expect(log).toBeCalledTimes(1);
@@ -544,7 +566,28 @@ describe('calculateDesiredAcState', () => {
       });
     });
 
-    it('should keep the fan on if the outdoor air is still providing benefit', () => {
+    it('should keep the fan on if the outdoor air is still providing signficiant benefit', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log,
+        {
+          roomMeasurement: {
+            temperature: 23.0,
+            humidity: 60,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+          bomObservation: { temperature: 15.0, humidity: 30 },
+        },
+        { ...MOCK_AC_STATE, on: true, mode: 'fan' },
+      );
+
+      expect(log).not.toBeCalled();
+      expect(desiredState).toBe(false);
+    });
+
+    it('should keep the fan on if the outdoor air is still providing slight benefit', () => {
       const log = mockLogging();
 
       const desiredState = calculateDesiredAcState(
@@ -612,7 +655,7 @@ describe('calculateDesiredAcState', () => {
           coolingThresholdTemperature: 23.0,
           bomObservation: { temperature: 15.0, humidity: 60 },
         },
-        { ...MOCK_AC_STATE, on: false },
+        { ...MOCK_AC_STATE, mode: 'dry', on: false },
       );
 
       expect(log).toBeCalledTimes(1);
