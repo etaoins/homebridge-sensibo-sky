@@ -12,91 +12,52 @@ interface TargetAirState {
   temperature: number;
 }
 
-interface Metric {
-  roomMeasurement: number;
-  target: number;
-  bomObservation: number;
-}
-
-// Assume we can halve the outdoor humidity in dry mode
-const effectiveOutdoorAirInDryMode = (humidity: number) => humidity / 2;
-
 const metricIsBeneficial = (
-  { roomMeasurement, target, bomObservation }: Metric,
+  input: OutdoorAirBenefitInput,
+  metricName: 'temperature' | 'humidity',
+  mode: 'dry' | 'fan',
   threshold: number,
-): boolean =>
-  (roomMeasurement - target > threshold &&
-    roomMeasurement - bomObservation > threshold) ||
-  (target - roomMeasurement > threshold &&
-    bomObservation - roomMeasurement > threshold);
+): boolean => {
+  const roomMeasurement = input.roomMeasurement[metricName];
+  const target = input.target[metricName];
+
+  const ingestedAir =
+    metricName === 'humidity' && mode === 'dry'
+      ? // Assume we can halve the outdoor humidity in dry mode
+        input.bomObservation.humidity / 2
+      : input.bomObservation[metricName];
+
+  return (
+    (roomMeasurement - target > threshold &&
+      roomMeasurement - ingestedAir > threshold) ||
+    (target - roomMeasurement > threshold &&
+      ingestedAir - roomMeasurement > threshold)
+  );
+};
 
 export const shouldStopIngesting = (
-  { roomMeasurement, target, bomObservation }: OutdoorAirBenefitInput,
+  input: OutdoorAirBenefitInput,
   mode: 'fan' | 'dry',
 ): boolean =>
-  !metricIsBeneficial(
-    {
-      roomMeasurement: roomMeasurement.temperature,
-      target: target.temperature,
-      bomObservation: bomObservation.temperature,
-    },
-    0.0,
-  ) ||
-  !metricIsBeneficial(
-    {
-      roomMeasurement: roomMeasurement.humidity,
-      target: target.humidity,
-      bomObservation:
-        mode === 'dry'
-          ? effectiveOutdoorAirInDryMode(bomObservation.humidity)
-          : bomObservation.humidity,
-    },
-    0.0,
-  );
+  !metricIsBeneficial(input, 'temperature', mode, 0.0) ||
+  !metricIsBeneficial(input, 'humidity', mode, 0.0);
 
-export const shouldStartIngesting = ({
-  roomMeasurement,
-  target,
-  bomObservation,
-}: OutdoorAirBenefitInput): 'fan' | 'dry' | false => {
-  if (
-    !metricIsBeneficial(
-      {
-        roomMeasurement: roomMeasurement.temperature,
-        target: target.temperature,
-        bomObservation: bomObservation.temperature,
-      },
-      1.0,
-    )
-  ) {
+export const shouldStartIngesting = (
+  input: OutdoorAirBenefitInput,
+): 'fan' | 'dry' | false => {
+  if (!metricIsBeneficial(input, 'temperature', 'fan', 1.0)) {
     // Temperature out-of-range; nothing we can do about this
     return false;
   }
 
-  if (
-    metricIsBeneficial(
-      {
-        roomMeasurement: roomMeasurement.humidity,
-        target: target.humidity,
-        bomObservation: bomObservation.humidity,
-      },
-      5.0,
-    )
-  ) {
+  if (metricIsBeneficial(input, 'humidity', 'fan', 5.0)) {
     // We can just use the fan normally
     return 'fan';
   }
 
   if (
-    roomMeasurement.temperature > target.temperature &&
-    metricIsBeneficial(
-      {
-        roomMeasurement: roomMeasurement.humidity,
-        target: target.humidity,
-        bomObservation: effectiveOutdoorAirInDryMode(bomObservation.humidity),
-      },
-      5.0,
-    )
+    input.roomMeasurement.temperature > input.target.temperature &&
+    metricIsBeneficial(input, 'humidity', 'dry', 5.0)
   ) {
     // We can use dry mode to compensate for the outdoor humidity
     return 'dry';
