@@ -244,7 +244,10 @@ export const calculateDesiredAcState = (
       bomObservation,
     });
 
-    if (ingestMode !== false && prevState.mode !== ingestMode) {
+    if (
+      ingestMode !== false &&
+      (!prevState.on || prevState.mode !== ingestMode)
+    ) {
       log(
         `Outdoor air (${airMetricsString(
           bomObservation,
