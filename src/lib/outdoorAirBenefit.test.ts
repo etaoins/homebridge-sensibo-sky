@@ -22,7 +22,7 @@ describe('outdoorAirBenefit', () => {
       expect(shouldStopIngesting(input, 'fan')).toBe(true);
     });
 
-    it('should stop fan when only temperature is a benefit', () => {
+    it('should keep fan on when only temperature is a benefit', () => {
       const input = {
         roomMeasurement: {
           temperature: 18,
@@ -39,10 +39,10 @@ describe('outdoorAirBenefit', () => {
       };
 
       expect(shouldStartIngesting(input)).toBe(false);
-      expect(shouldStopIngesting(input, 'fan')).toBe(true);
+      expect(shouldStopIngesting(input, 'fan')).toBe(false);
     });
 
-    it('should stop fan when only humidity is a benefit', () => {
+    it('should keep fan on when only humidity is a benefit', () => {
       const input = {
         roomMeasurement: {
           temperature: 20,
@@ -59,7 +59,7 @@ describe('outdoorAirBenefit', () => {
       };
 
       expect(shouldStartIngesting(input)).toBe(false);
-      expect(shouldStopIngesting(input, 'fan')).toBe(true);
+      expect(shouldStopIngesting(input, 'fan')).toBe(false);
     });
 
     it('should keep fan when humidity & temperature are slight benefits', () => {
@@ -102,7 +102,7 @@ describe('outdoorAirBenefit', () => {
       expect(shouldStopIngesting(input, 'fan')).toBe(true);
     });
 
-    it('should stop fan when only humidity is slight detriment', () => {
+    it('should keep fan on when only humidity is slight detriment', () => {
       const input = {
         roomMeasurement: {
           temperature: 20.1,
@@ -119,10 +119,10 @@ describe('outdoorAirBenefit', () => {
       };
 
       expect(shouldStartIngesting(input)).toBe(false);
-      expect(shouldStopIngesting(input, 'fan')).toBe(true);
+      expect(shouldStopIngesting(input, 'fan')).toBe(false);
     });
 
-    it('should stop fan when only temperature is slight detriment', () => {
+    it('should keep fan on when only temperature is slight detriment', () => {
       const input = {
         roomMeasurement: {
           temperature: 20.1,
@@ -139,7 +139,7 @@ describe('outdoorAirBenefit', () => {
       };
 
       expect(shouldStartIngesting(input)).toBe(false);
-      expect(shouldStopIngesting(input, 'fan')).toBe(true);
+      expect(shouldStopIngesting(input, 'fan')).toBe(false);
     });
 
     it('should stop fan when humidity & temperature are signficant detriments', () => {
@@ -155,6 +155,46 @@ describe('outdoorAirBenefit', () => {
         target: {
           temperature: 20,
           humidity: 30,
+        },
+      };
+
+      expect(shouldStartIngesting(input)).toBe(false);
+      expect(shouldStopIngesting(input, 'fan')).toBe(true);
+    });
+
+    it('should stop fan when only humidity is a signifcant detriment', () => {
+      const input = {
+        roomMeasurement: {
+          temperature: 20,
+          humidity: 50,
+        },
+        bomObservation: {
+          temperature: 20,
+          humidity: 100,
+        },
+        target: {
+          temperature: 20,
+          humidity: 30,
+        },
+      };
+
+      expect(shouldStartIngesting(input)).toBe(false);
+      expect(shouldStopIngesting(input, 'fan')).toBe(true);
+    });
+
+    it('should stop fan when only temperature is a signficant detriment', () => {
+      const input = {
+        roomMeasurement: {
+          temperature: 30,
+          humidity: 50,
+        },
+        bomObservation: {
+          temperature: 40,
+          humidity: 50,
+        },
+        target: {
+          temperature: 20,
+          humidity: 50,
         },
       };
 
@@ -224,7 +264,7 @@ describe('outdoorAirBenefit', () => {
       expect(shouldStopIngesting(input, 'dry')).toBe(true);
     });
 
-    it('should stop drying when only humidity is a benefit', () => {
+    it('should keep drying when only humidity is a benefit', () => {
       const input = {
         roomMeasurement: {
           temperature: 20,
@@ -241,7 +281,7 @@ describe('outdoorAirBenefit', () => {
       };
 
       expect(shouldStartIngesting(input)).toBe(false);
-      expect(shouldStopIngesting(input, 'dry')).toBe(true);
+      expect(shouldStopIngesting(input, 'dry')).toBe(false);
     });
 
     it('should keep drying when humidity & temperature are slight benefits', () => {
@@ -272,7 +312,7 @@ describe('outdoorAirBenefit', () => {
         },
         bomObservation: {
           temperature: 20.1,
-          humidity: 51,
+          humidity: 102,
         },
         target: {
           temperature: 20,
@@ -288,7 +328,7 @@ describe('outdoorAirBenefit', () => {
       const input = {
         roomMeasurement: {
           temperature: 20.1,
-          humidity: 51,
+          humidity: 49,
         },
         bomObservation: {
           temperature: 19.9,
@@ -305,7 +345,7 @@ describe('outdoorAirBenefit', () => {
       expect(shouldStopIngesting(input, 'dry')).toBe(true);
     });
 
-    it('should stop drying when only temperature is slight detriment', () => {
+    it('should keep drying when only temperature is slight detriment', () => {
       const input = {
         roomMeasurement: {
           temperature: 20.1,
@@ -322,7 +362,7 @@ describe('outdoorAirBenefit', () => {
       };
 
       expect(shouldStartIngesting(input)).toBe(false);
-      expect(shouldStopIngesting(input, 'dry')).toBe(true);
+      expect(shouldStopIngesting(input, 'dry')).toBe(false);
     });
 
     it('should stop drying when humidity & temperature are signficant detriments', () => {

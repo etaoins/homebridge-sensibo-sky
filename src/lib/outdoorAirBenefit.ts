@@ -38,9 +38,29 @@ const metricIsBeneficial = (
 export const shouldStopIngesting = (
   input: OutdoorAirBenefitInput,
   mode: 'fan' | 'dry',
-): boolean =>
-  !metricIsBeneficial(input, 'temperature', mode, 0.0) ||
-  !metricIsBeneficial(input, 'humidity', mode, 0.0);
+): boolean => {
+  if (
+    !metricIsBeneficial(input, 'temperature', mode, 0.0) &&
+    !metricIsBeneficial(input, 'humidity', mode, 0.0)
+  ) {
+    // Neither are a benefit; stop
+    return true;
+  }
+
+  if (
+    mode === 'dry' &&
+    input.roomMeasurement.humidity <= input.target.humidity
+  ) {
+    // Don't keep drying past the target humidity; this is expensive madness
+    return true;
+  }
+
+  // Keep going until one metric is out of range
+  return (
+    !metricIsBeneficial(input, 'temperature', mode, -1.0) ||
+    !metricIsBeneficial(input, 'humidity', mode, -5.0)
+  );
+};
 
 export const shouldStartIngesting = (
   input: OutdoorAirBenefitInput,
