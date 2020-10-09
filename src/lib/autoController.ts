@@ -37,6 +37,7 @@ interface AutoModeInput {
   heatingThresholdTemperature: number;
   coolingThresholdTemperature: number;
   bomObservation?: BomObservation;
+  yieldAc?: boolean;
 }
 
 interface TargetState {
@@ -143,6 +144,7 @@ export const calculateDesiredAcState = (
     heatingThresholdTemperature,
     coolingThresholdTemperature,
     bomObservation,
+    yieldAc,
   } = input;
 
   const target = {
@@ -206,6 +208,19 @@ export const calculateDesiredAcState = (
 
   if (hasReachedGoal === false) {
     // Still trying to reach goal
+    return false;
+  }
+
+  if (yieldAc) {
+    if (prevState.on) {
+      log('Reached goal while yielding; switching off');
+
+      return {
+        ...prevState,
+        on: false,
+      };
+    }
+
     return false;
   }
 
@@ -280,7 +295,6 @@ export const calculateDesiredAcState = (
 
     return {
       ...prevState,
-
       on: false,
     };
   }

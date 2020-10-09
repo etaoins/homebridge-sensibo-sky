@@ -58,6 +58,7 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
 
   private readonly informationService: Homebridge.Service;
   private readonly thermostatService: Homebridge.Service;
+  private readonly yieldSwitchService: Homebridge.Service;
 
   /**
    * Timeout for debouncing user state changes
@@ -255,6 +256,8 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
         },
       );
 
+    this.yieldSwitchService = new hap.Service.Switch('Yield AC');
+
     // We don't need to wait for the AC state to do this
     if (this.userState.autoMode) {
       this.updateCharacteristicsForAutoMode(this.userState);
@@ -269,7 +272,11 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
   }
 
   getServices(): Homebridge.Service[] {
-    return [this.informationService, this.thermostatService];
+    return [
+      this.informationService,
+      this.thermostatService,
+      this.yieldSwitchService,
+    ];
   }
 
   identify(): void {
@@ -537,6 +544,11 @@ export class SensiboPodAccessory implements Homebridge.AccessoryPlugin {
             heatingThresholdTemperature,
             coolingThresholdTemperature,
             bomObservation: this.bomObservation,
+            yieldAc: Boolean(
+              this.yieldSwitchService.getCharacteristic(
+                this.hap.Characteristic.On,
+              ).value,
+            ),
           },
           newAcState,
         );
