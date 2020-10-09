@@ -80,8 +80,12 @@ const currentModeHasReachedGoal = (
 
     case 'fan':
     case 'dry':
+      if (!bomObservation) {
+        // Can't make a judgement about this
+        return null;
+      }
+
       if (
-        bomObservation &&
         shouldStopIngesting(
           { roomMeasurement, target, bomObservation },
           prevState.mode,
@@ -94,6 +98,14 @@ const currentModeHasReachedGoal = (
         );
 
         return true;
+      }
+
+      if (
+        shouldStartIngesting({ roomMeasurement, target, bomObservation }) ===
+        prevState.mode
+      ) {
+        // Have not reached goal
+        return false;
       }
 
       // Fan is more of an idle state that goal seeking
@@ -244,10 +256,7 @@ export const calculateDesiredAcState = (
       bomObservation,
     });
 
-    if (
-      ingestMode !== false &&
-      (!prevState.on || prevState.mode !== ingestMode)
-    ) {
+    if (ingestMode !== false) {
       log(
         `Outdoor air (${airMetricsString(
           bomObservation,
