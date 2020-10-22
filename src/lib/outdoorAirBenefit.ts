@@ -23,8 +23,8 @@ const metricIsBeneficial = (
 
   const ingestedAir =
     metricName === 'humidity' && mode === 'dry'
-      ? // Assume we can halve the outdoor humidity in dry mode
-        input.bomObservation.humidity / 2
+      ? // Assume we get 2/3rds the outdoor humidity in dry mode
+        (input.bomObservation.humidity * 2) / 3
       : input.bomObservation[metricName];
 
   return (
@@ -79,7 +79,7 @@ export const shouldStartIngesting = (
     // Make sure we're more hot & humid than desired before using dry mode
     input.roomMeasurement.temperature > input.target.temperature &&
     input.roomMeasurement.humidity > input.target.humidity &&
-    input.roomMeasurement.humidity > 50 &&
+    input.roomMeasurement.humidity > 55 &&
     metricIsBeneficial(input, 'humidity', 'dry', 5.0)
   ) {
     // We can use dry mode to compensate for the outdoor humidity
