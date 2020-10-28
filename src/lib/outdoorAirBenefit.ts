@@ -23,8 +23,8 @@ const metricIsBeneficial = (
 
   const ingestedAir =
     metricName === 'humidity' && mode === 'dry'
-      ? // Assume we get 2/3rds the outdoor humidity in dry mode
-        (input.bomObservation.humidity * 2) / 3
+      ? // Assume we get 60% the outdoor humidity in dry mode
+        input.bomObservation.humidity * 0.6
       : input.bomObservation[metricName];
 
   return (
