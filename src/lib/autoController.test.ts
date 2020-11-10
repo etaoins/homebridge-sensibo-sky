@@ -130,7 +130,7 @@ describe('calculateDesiredAcState', () => {
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'cool' },
+        { ...MOCK_AC_STATE, on: true, mode: 'cool', targetTemperature: 19.0 },
       );
 
       expect(log).toBeCalledTimes(2);
@@ -239,7 +239,7 @@ describe('calculateDesiredAcState', () => {
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'heat' },
+        { ...MOCK_AC_STATE, on: true, mode: 'heat', targetTemperature: 23.0 },
       );
 
       expect(log).not.toBeCalled();
@@ -259,7 +259,13 @@ describe('calculateDesiredAcState', () => {
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'heat', fanLevel: 'low' },
+        {
+          ...MOCK_AC_STATE,
+          on: true,
+          mode: 'heat',
+          fanLevel: 'low',
+          targetTemperature: 23.0,
+        },
       );
 
       expect(log).toBeCalledTimes(1);
@@ -287,7 +293,7 @@ describe('calculateDesiredAcState', () => {
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'heat' },
+        { ...MOCK_AC_STATE, on: true, mode: 'heat', targetTemperature: 23.0 },
       );
 
       expect(log).not.toBeCalled();
@@ -319,6 +325,52 @@ describe('calculateDesiredAcState', () => {
       expect(desiredState).toMatchObject({
         on: false,
       });
+    });
+
+    it('adjust the AC target temperature when its out of range of our target temperature', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log as any,
+        {
+          roomMeasurement: {
+            temperature: 20.0,
+            humidity: 40,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+        },
+        { ...MOCK_AC_STATE, on: true, mode: 'heat', targetTemperature: 20.0 },
+      );
+
+      expect(log).toBeCalledTimes(1);
+      expect(log).toBeCalledWith(
+        'Adjusting AC target temperature from 20C to 23C',
+      );
+
+      expect(desiredState).toMatchObject({
+        targetTemperature: 23,
+      });
+    });
+
+    it('does nothing if the AC target temperature is out of range but is already clamped', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log as any,
+        {
+          roomMeasurement: {
+            temperature: 30.0,
+            humidity: 40,
+          },
+          heatingThresholdTemperature: 30.0,
+          coolingThresholdTemperature: 40.0,
+        },
+        { ...MOCK_AC_STATE, on: true, mode: 'heat', targetTemperature: 30.0 },
+      );
+
+      expect(log).not.toBeCalled();
+      expect(desiredState).toBe(false);
     });
   });
 
@@ -392,7 +444,7 @@ describe('calculateDesiredAcState', () => {
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'heat' },
+        { ...MOCK_AC_STATE, on: true, mode: 'heat', targetTemperature: 23.0 },
       );
 
       expect(log).toBeCalledTimes(2);
@@ -422,7 +474,7 @@ describe('calculateDesiredAcState', () => {
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'heat' },
+        { ...MOCK_AC_STATE, on: true, mode: 'heat', targetTemperature: 23.0 },
       );
 
       expect(log).toBeCalledTimes(2);
@@ -452,7 +504,7 @@ describe('calculateDesiredAcState', () => {
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'cool' },
+        { ...MOCK_AC_STATE, on: true, mode: 'cool', targetTemperature: 19.0 },
       );
 
       expect(log).not.toBeCalled();
@@ -472,7 +524,7 @@ describe('calculateDesiredAcState', () => {
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'cool' },
+        { ...MOCK_AC_STATE, on: true, mode: 'cool', targetTemperature: 19.0 },
       );
 
       expect(log).toBeCalledTimes(1);
@@ -500,7 +552,7 @@ describe('calculateDesiredAcState', () => {
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'cool' },
+        { ...MOCK_AC_STATE, on: true, mode: 'cool', targetTemperature: 19.0 },
       );
 
       expect(log).not.toBeCalled();
@@ -520,7 +572,7 @@ describe('calculateDesiredAcState', () => {
           heatingThresholdTemperature: 19.0,
           coolingThresholdTemperature: 23.0,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'cool' },
+        { ...MOCK_AC_STATE, on: true, mode: 'cool', targetTemperature: 19.0 },
       );
 
       expect(log).toBeCalledTimes(2);
@@ -548,7 +600,7 @@ describe('calculateDesiredAcState', () => {
           coolingThresholdTemperature: 23.0,
           yieldAc: true,
         },
-        { ...MOCK_AC_STATE, on: true, mode: 'cool' },
+        { ...MOCK_AC_STATE, on: true, mode: 'cool', targetTemperature: 19.0 },
       );
 
       expect(log).toBeCalledTimes(2);
@@ -558,6 +610,52 @@ describe('calculateDesiredAcState', () => {
       expect(desiredState).toMatchObject({
         on: false,
       });
+    });
+
+    it('adjust the AC target temperature when its out of range of our target temperature', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log as any,
+        {
+          roomMeasurement: {
+            temperature: 22.0,
+            humidity: 40,
+          },
+          heatingThresholdTemperature: 19.0,
+          coolingThresholdTemperature: 23.0,
+        },
+        { ...MOCK_AC_STATE, on: true, mode: 'cool', targetTemperature: 22.0 },
+      );
+
+      expect(log).toBeCalledTimes(1);
+      expect(log).toBeCalledWith(
+        'Adjusting AC target temperature from 22C to 19C',
+      );
+
+      expect(desiredState).toMatchObject({
+        targetTemperature: 19,
+      });
+    });
+
+    it('does nothing if the AC target temperature is out of range but is already clamped', () => {
+      const log = mockLogging();
+
+      const desiredState = calculateDesiredAcState(
+        log as any,
+        {
+          roomMeasurement: {
+            temperature: 20.0,
+            humidity: 40,
+          },
+          heatingThresholdTemperature: 14.0,
+          coolingThresholdTemperature: 20.0,
+        },
+        { ...MOCK_AC_STATE, on: true, mode: 'cool', targetTemperature: 18.0 },
+      );
+
+      expect(log).not.toBeCalled();
+      expect(desiredState).toBe(false);
     });
   });
 

@@ -207,6 +207,49 @@ export const calculateDesiredAcState = (
   );
 
   if (hasReachedGoal === false) {
+    // See if we need to re-adjust the target
+    if (
+      prevState.on &&
+      prevState.mode === 'cool' &&
+      prevState.targetTemperature >= target.temperature
+    ) {
+      const targetTemperature = clampTemperature(
+        heatingThresholdTemperature,
+        SENSIBO_COOLING_TEMPERATURE_RANGE,
+      );
+
+      if (targetTemperature !== prevState.targetTemperature) {
+        log(
+          `Adjusting AC target temperature from ${prevState.targetTemperature}C to ${targetTemperature}C`,
+        );
+
+        return {
+          ...prevState,
+          targetTemperature,
+        };
+      }
+    } else if (
+      prevState.on &&
+      prevState.mode === 'heat' &&
+      prevState.targetTemperature <= target.temperature
+    ) {
+      const targetTemperature = clampTemperature(
+        coolingThresholdTemperature,
+        SENSIBO_HEATING_TEMPERATURE_RANGE,
+      );
+
+      if (targetTemperature !== prevState.targetTemperature) {
+        log(
+          `Adjusting AC target temperature from ${prevState.targetTemperature}C to ${targetTemperature}C`,
+        );
+
+        return {
+          ...prevState,
+          targetTemperature,
+        };
+      }
+    }
+
     // Still trying to reach goal
     return false;
   }
