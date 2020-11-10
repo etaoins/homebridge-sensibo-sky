@@ -24,6 +24,34 @@ const fanLevelForTemperatureDeviation = (deviation: number): FanLevel => {
   return 'low';
 };
 
+const fanLevelForCooling = (
+  { roomMeasurement, coolingThresholdTemperature }: AutoModeInput,
+  targetTemperature: number,
+): FanLevel => {
+  if (targetTemperature <= SENSIBO_COOLING_TEMPERATURE_RANGE.minValue) {
+    // We're clamped; let the AC shut off the fan when it hits the limit
+    return 'auto';
+  }
+
+  return fanLevelForTemperatureDeviation(
+    roomMeasurement.temperature - coolingThresholdTemperature,
+  );
+};
+
+const fanLevelForHeating = (
+  { roomMeasurement, heatingThresholdTemperature }: AutoModeInput,
+  targetTemperature: number,
+): FanLevel => {
+  if (targetTemperature >= SENSIBO_HEATING_TEMPERATURE_RANGE.maxValue) {
+    // We're clamped; let the AC shut off the fan when it hits the limit
+    return 'auto';
+  }
+
+  return fanLevelForTemperatureDeviation(
+    heatingThresholdTemperature - roomMeasurement.temperature,
+  );
+};
+
 const airMetricsString = ({
   temperature,
   humidity,
@@ -213,19 +241,20 @@ export const calculateDesiredAcState = (
       prevState.mode === 'cool' &&
       prevState.targetTemperature >= target.temperature
     ) {
-      const targetTemperature = clampTemperature(
+      const acTargetTemperature = clampTemperature(
         heatingThresholdTemperature,
         SENSIBO_COOLING_TEMPERATURE_RANGE,
       );
 
-      if (targetTemperature !== prevState.targetTemperature) {
+      if (acTargetTemperature !== prevState.targetTemperature) {
         log(
-          `Adjusting AC target temperature from ${prevState.targetTemperature}C to ${targetTemperature}C`,
+          `Adjusting AC target temperature from ${prevState.targetTemperature}C to ${acTargetTemperature}C`,
         );
 
         return {
           ...prevState,
-          targetTemperature,
+          fanLevel: fanLevelForCooling(input, target.temperature),
+          targetTemperature: acTargetTemperature,
         };
       }
     } else if (
@@ -233,19 +262,20 @@ export const calculateDesiredAcState = (
       prevState.mode === 'heat' &&
       prevState.targetTemperature <= target.temperature
     ) {
-      const targetTemperature = clampTemperature(
+      const acTargetTemperature = clampTemperature(
         coolingThresholdTemperature,
         SENSIBO_HEATING_TEMPERATURE_RANGE,
       );
 
-      if (targetTemperature !== prevState.targetTemperature) {
+      if (acTargetTemperature !== prevState.targetTemperature) {
         log(
-          `Adjusting AC target temperature from ${prevState.targetTemperature}C to ${targetTemperature}C`,
+          `Adjusting AC target temperature from ${prevState.targetTemperature}C to ${acTargetTemperature}C`,
         );
 
         return {
           ...prevState,
-          targetTemperature,
+          fanLevel: fanLevelForHeating(input, target.temperature),
+          targetTemperature: acTargetTemperature,
         };
       }
     }
@@ -277,9 +307,7 @@ export const calculateDesiredAcState = (
 
       on: true,
       mode: 'cool',
-      fanLevel: fanLevelForTemperatureDeviation(
-        roomMeasurement.temperature - coolingThresholdTemperature,
-      ),
+      fanLevel: fanLevelForCooling(input, target.temperature),
       targetTemperature: clampTemperature(
         heatingThresholdTemperature,
         SENSIBO_COOLING_TEMPERATURE_RANGE,
@@ -297,9 +325,7 @@ export const calculateDesiredAcState = (
 
       on: true,
       mode: 'heat',
-      fanLevel: fanLevelForTemperatureDeviation(
-        heatingThresholdTemperature - roomMeasurement.temperature,
-      ),
+      fanLevel: fanLevelForHeating(input, target.temperature),
       targetTemperature: clampTemperature(
         coolingThresholdTemperature,
         SENSIBO_HEATING_TEMPERATURE_RANGE,
