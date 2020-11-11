@@ -205,35 +205,6 @@ describe('calculateDesiredAcState', () => {
       });
     });
 
-    it('should heat on auto if the target temperature is clamped', () => {
-      const log = mockLogging();
-
-      const desiredState = calculateDesiredAcState(
-        log,
-        {
-          roomMeasurement: {
-            temperature: 11.0,
-            humidity: 40,
-          },
-          heatingThresholdTemperature: 30.0,
-          coolingThresholdTemperature: 40.0,
-        },
-        { ...MOCK_AC_STATE, on: false },
-      );
-
-      expect(log).toBeCalledTimes(1);
-      expect(log).toBeCalledWith(
-        'Colder (11) than heating threshold (30), starting heat mode',
-      );
-
-      expect(desiredState).toMatchObject({
-        fanLevel: 'auto',
-        mode: 'heat',
-        on: true,
-        targetTemperature: 30,
-      });
-    });
-
     it('should do nothing if the temperature is 1C below range and the yield switch is on', () => {
       const log = mockLogging();
 
@@ -517,35 +488,6 @@ describe('calculateDesiredAcState', () => {
         mode: 'cool',
         on: true,
         targetTemperature: 19,
-      });
-    });
-
-    it('should cool on auto if the target temperature is clamped', () => {
-      const log = mockLogging();
-
-      const desiredState = calculateDesiredAcState(
-        log,
-        {
-          roomMeasurement: {
-            temperature: 31.0,
-            humidity: 40,
-          },
-          heatingThresholdTemperature: 16.0,
-          coolingThresholdTemperature: 20.0,
-        },
-        { ...MOCK_AC_STATE, on: false },
-      );
-
-      expect(log).toBeCalledTimes(1);
-      expect(log).toBeCalledWith(
-        'Hotter (31) than cooling threshold (20), starting cool mode',
-      );
-
-      expect(desiredState).toMatchObject({
-        fanLevel: 'auto',
-        mode: 'cool',
-        on: true,
-        targetTemperature: 18,
       });
     });
 
